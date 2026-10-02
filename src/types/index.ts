@@ -1,6 +1,6 @@
 export type WorkerType = 'EMPLEADO_INTERNO' | 'CONTRATISTA';
 
-export type WorkerStatus = 'ACTIVO' | 'INACTIVO' | 'EN_OBSERVACION' | 'BLOQUEADO';
+export type WorkerStatus = 'ACTIVO' | 'INACTIVO' | 'EN_OBSERVACION';
 
 export type ScanType = 'ENTRADA' | 'SALIDA';
 
@@ -34,7 +34,7 @@ export type PaperSlipMotive =
   | 'COMPENSACION_HORAS';
 
 export interface Worker {
-  id: string;
+  id: number;
   code: string;
   name: string;
   dni: string;
@@ -47,8 +47,9 @@ export interface Worker {
   status: WorkerStatus;
   avatarUrl: string;
   baseSalary?: number;
-  // Specific fields for internal employees
-  hireDate?: string;
+  // Specific fields for internal employees (Regla 365 días)
+  fecha_ingreso: string; // YYYY-MM-DD
+  hireDate?: string;     // alias retrocompatible
   vacationDaysAvailable?: number;
   // Specific fields for contractors
   contractorCompany?: string;
@@ -60,7 +61,7 @@ export interface Worker {
 
 export interface AttendanceRecord {
   id: string;
-  workerId: string;
+  workerId: number;
   workerName: string;
   workerType: WorkerType;
   workerPosition: string;
@@ -99,7 +100,7 @@ export interface DailyAttendanceSummary {
 }
 
 export interface WorkerMonthlyStats {
-  workerId: string;
+  workerId: number;
   month: string; // e.g. "Septiembre 2026"
   totalWorkdays: number;
   attendedDays: number;
@@ -122,7 +123,7 @@ export interface WorkerMonthlyStats {
 export interface PaperSlipRecord {
   id: string;
   folioNumber: string; // Correlativo físico ej: PAP-2026-0042
-  workerId: string;
+  workerId: number;
   workerName: string;
   workerPosition: string;
   workerDni: string;
@@ -153,11 +154,12 @@ export interface VacationProgress {
   isEligibleFor30Days: boolean;
   daysRemainingUntilYear: number;
   vacationDaysAvailable: number;
+  statusLabel: string;
 }
 
 export interface VacationNotification {
   id: string;
-  workerId: string;
+  workerId: number;
   workerName: string;
   workerPosition: string;
   type: 'ELIGIBLE_NOW' | 'UPCOMING_30_DAYS';
@@ -168,7 +170,7 @@ export interface VacationNotification {
 
 export interface RequestItem {
   id: string;
-  workerId: string;
+  workerId: number;
   workerName: string;
   workerType: WorkerType;
   type: 'VACACIONES' | 'PERMISO' | 'DESCANSO_MEDICO';

@@ -7,24 +7,27 @@
   }
 
   * {
-    border-color: var(--color-zinc-200);
+    border-color: #e2e8f0; /* slate-200 */
   }
 
   .dark * {
-    border-color: var(--color-zinc-800);
+    border-color: #1e293b; /* slate-800 */
   }
 
   body {
     font-family: var(--font-sans);
+    background-color: #f8fafc; /* slate-50 */
+    color: #0f172a; /* slate-900 */
     overflow-x: hidden;
-    transition: background-color 0.2s ease, color 0.2s ease;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
   }
 }
 
-/* Minimalist Scrollbar */
+/* Minimalist Corporate Scrollbar */
 ::-webkit-scrollbar {
-  width: 6px;
-  height: 6px;
+  width: 5px;
+  height: 5px;
 }
 
 ::-webkit-scrollbar-track {
@@ -32,27 +35,23 @@
 }
 
 ::-webkit-scrollbar-thumb {
-  background: #d4d4d8;
-  border-radius: 9999px;
+  background: #cbd5e1; /* slate-300 */
+  border-radius: 4px;
 }
 
 .dark ::-webkit-scrollbar-thumb {
-  background: #27272a;
+  background: #334155; /* slate-700 */
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: #a1a1aa;
+  background: #94a3b8; /* slate-400 */
 }
 
-.dark ::-webkit-scrollbar-thumb:hover {
-  background: #3f3f46;
-}
-
-/* Subtle smooth fade in animation */
+/* Subtle, smooth flat fade-in without bouncy AI motion */
 @keyframes fadeIn {
   from {
     opacity: 0;
-    transform: translateY(4px);
+    transform: translateY(2px);
   }
   to {
     opacity: 1;
@@ -61,25 +60,5 @@
 }
 
 .animate-fadeIn {
-  animation: fadeIn 0.25s cubic-bezier(0.16, 1, 0.3, 1) forwards;
-}
-
-/* Minimal Pulse for RFID scan tap */
-@keyframes rfidTap {
-  0% {
-    transform: scale(0.98);
-    opacity: 0.9;
-  }
-  50% {
-    transform: scale(1.02);
-    opacity: 1;
-  }
-  100% {
-    transform: scale(1);
-    opacity: 1;
-  }
-}
-
-.animate-rfid-tap {
-  animation: rfidTap 0.4s ease-out;
+  animation: fadeIn 0.15s ease-out forwards;
 }

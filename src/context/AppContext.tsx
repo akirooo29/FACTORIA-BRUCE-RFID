@@ -20,6 +20,7 @@ import {
   INITIAL_VACATION_NOTIFICATIONS,
   generateMonthlyStats,
 } from '../data/mockData';
+import { personnelService } from '../services/personnelService';
 import { rfidAudio } from '../utils/audio';
 
 interface ScanResult {
@@ -32,6 +33,12 @@ interface ScanResult {
 }
 
 interface AppContextType {
+  // Autenticación & Flujo de Entrada
+  isAuthenticated: boolean;
+  currentUser: string | null;
+  login: (username: string) => void;
+  logout: () => void;
+
   theme: ThemeMode;
   toggleTheme: () => void;
   workers: Worker[];
@@ -48,8 +55,12 @@ interface AppContextType {
   activeTerminal: string;
   setActiveTerminal: (term: string) => void;
   processRfidScan: (rfidTag: string, scanTypeOverride?: ScanType) => ScanResult;
-  addWorker: (worker: Omit<Worker, 'id'>) => void;
-  updateWorkerStatus: (id: string, status: Worker['status']) => void;
+  
+  // Operaciones CRUD preparadas para Backend API (C# ASP.NET / Node.js + SQL Server)
+  addWorker: (worker: Omit<Worker, 'id'>) => Promise<Worker>;
+  updateWorker: (id: number, data: Partial<Worker>) => Promise<Worker>;
+  deleteWorker: (id: number) => Promise<boolean>;
+
   addRequest: (req: Omit<RequestItem, 'id' | 'submittedDate'>) => RequestItem;
   sidebarCollapsed: boolean;
   setSidebarCollapsed: React.Dispatch<React.SetStateAction<boolean>>;
@@ -61,14 +72,22 @@ interface AppContextType {
   setActiveContractorWarningModal: (show: boolean) => void;
   attemptedRestrictedSection: string | null;
   setAttemptedRestrictedSection: (section: string | null) => void;
-  selectedWorkerForStats: string;
-  setSelectedWorkerForStats: (workerId: string) => void;
-  getWorkerStats: (workerId: string) => WorkerMonthlyStats;
+  selectedWorkerForStats: number;
+  setSelectedWorkerForStats: (workerId: number) => void;
+  getWorkerStats: (workerId: number | string) => WorkerMonthlyStats;
 }
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
 
 export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  // Estado de Autenticación (Inicia false para respetar el flujo Splash -> Login)
+  const [isAuthenticated, setIsAuthenticated] = useState<boolean>(() => {
+    return localStorage.getItem('fb_rfid_auth') === 'true';
+  });
+  const [currentUser, setCurrentUser] = useState<string | null>(() => {
+    return localStorage.getItem('fb_rfid_user') || null;
+  });
+
   // Theme state: Default 'light'
   const [theme, setTheme] = useState<ThemeMode>(() => {
     const saved = localStorage.getItem('fb_rfid_theme');
@@ -90,8 +109,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const [isAntennaConnected, setIsAntennaConnected] = useState<boolean>(true);
   const [lastScanResult, setLastScanResult] = useState<ScanResult | null>(null);
 
-  // Selected worker for individual effectiveness dashboard
-  const [selectedWorkerForStats, setSelectedWorkerForStats] = useState<string>('W-001');
+  // Selected worker for individual effectiveness dashboard (ID 1: Ing. Carlos Mendoza)
+  const [selectedWorkerForStats, setSelectedWorkerForStats] = useState<number>(1);
 
   // Modal alert when contractor tries to access restricted internal benefits
   const [activeContractorWarningModal, setActiveContractorWarningModal] = useState<boolean>(false);
@@ -110,6 +129,21 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   const toggleTheme = () => {
     setTheme((prev) => (prev === 'light' ? 'dark' : 'light'));
+  };
+
+  const login = (username: string) => {
+    setIsAuthenticated(true);
+    setCurrentUser(username);
+    localStorage.setItem('fb_rfid_auth', 'true');
+    localStorage.setItem('fb_rfid_user', username);
+    setCurrentView('dashboard');
+  };
+
+  const logout = () => {
+    setIsAuthenticated(false);
+    setCurrentUser(null);
+    localStorage.removeItem('fb_rfid_auth');
+    localStorage.removeItem('fb_rfid_user');
   };
 
   const clearLastScan = () => setLastScanResult(null);
@@ -150,11 +184,11 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       return res;
     }
 
-    if (foundWorker.status === 'BLOQUEADO' || foundWorker.status === 'INACTIVO') {
+    if (foundWorker.status === 'INACTIVO') {
       rfidAudio.playError();
       const res: ScanResult = {
         success: false,
-        message: `El colaborador ${foundWorker.name} se encuentra en estado ${foundWorker.status}. Pase de seguridad bloqueado.`,
+        message: `El colaborador ${foundWorker.name} se encuentra en estado INACTIVO. Acceso denegado.`,
         worker: foundWorker,
         status: 'DENEGADO',
       };
@@ -167,9 +201,6 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     const scanType: ScanType = scanTypeOverride || (lastWorkerLog && lastWorkerLog.scanType === 'ENTRADA' ? 'SALIDA' : 'ENTRADA');
 
     // Calculate Punctuality for ENTRADA based on 7:30 AM / 7:35 AM rules:
-    // - ≤ 07:30:00 AM: A_TIEMPO
-    // - 07:30:01 - 07:35:00 AM: TARDANZA_DESCUENTO (computable discount)
-    // - > 07:35:00 AM: PUERTA_CERRADA (Falta por defecto; requiere autorización exclusiva)
     const currentHours = now.getHours();
     const currentMinutes = now.getMinutes();
     const currentTotalMinutes = currentHours * 60 + currentMinutes;
@@ -221,10 +252,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
           : 'Salida de jornada registrada',
     };
 
-    // Audio feedback
     rfidAudio.playSuccess();
-
-    // Prepend new attendance record
     setAttendanceLogs((prev) => [newRecord, ...prev]);
 
     const punctualityMessage =
@@ -247,16 +275,34 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     return result;
   };
 
-  const addWorker = (workerData: Omit<Worker, 'id'>) => {
-    const newWorker: Worker = {
-      ...workerData,
-      id: `W-${(workers.length + 1).toString().padStart(3, '0')}`,
-    };
-    setWorkers((prev) => [newWorker, ...prev]);
+  /**
+   * Operaciones CRUD con arquitectura lista para Backend API
+   */
+  const addWorker = async (workerData: Omit<Worker, 'id'>): Promise<Worker> => {
+    const created = await personnelService.create(workerData);
+    setWorkers((prev) => [created, ...prev]);
+    return created;
   };
 
-  const updateWorkerStatus = (id: string, status: Worker['status']) => {
-    setWorkers((prev) => prev.map((w: Worker) => (w.id === id ? { ...w, status } : w)));
+  const updateWorker = async (id: number, data: Partial<Worker>): Promise<Worker> => {
+    const updated = await personnelService.update(id, data);
+    setWorkers((prev) => prev.map((w) => (w.id === id ? updated : w)));
+    return updated;
+  };
+
+  const deleteWorker = async (id: number): Promise<boolean> => {
+    const success = await personnelService.delete(id);
+    if (success) {
+      setWorkers((prev) => prev.filter((w) => w.id !== id));
+      // Si el trabajador seleccionado para estadísticas fue eliminado, apuntar al primero disponible
+      if (selectedWorkerForStats === id) {
+        const remaining = workers.filter((w) => w.id !== id);
+        if (remaining.length > 0) {
+          setSelectedWorkerForStats(remaining[0].id);
+        }
+      }
+    }
+    return success;
   };
 
   const addRequest = (reqData: Omit<RequestItem, 'id' | 'submittedDate'>): RequestItem => {
@@ -289,13 +335,17 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     );
   };
 
-  const getWorkerStats = (workerId: string): WorkerMonthlyStats => {
+  const getWorkerStats = (workerId: number | string): WorkerMonthlyStats => {
     return generateMonthlyStats(workerId, workers);
   };
 
   return (
     <AppContext.Provider
       value={{
+        isAuthenticated,
+        currentUser,
+        login,
+        logout,
         theme,
         toggleTheme,
         workers,
@@ -313,7 +363,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         setActiveTerminal,
         processRfidScan,
         addWorker,
-        updateWorkerStatus,
+        updateWorker,
+        deleteWorker,
         addRequest,
         sidebarCollapsed,
         setSidebarCollapsed,

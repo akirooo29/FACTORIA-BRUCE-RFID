@@ -12,9 +12,6 @@ import {
   Calendar,
   Clock,
   Search,
-  User,
-  Printer,
-  ChevronDown,
   Plus,
 } from 'lucide-react';
 
@@ -29,14 +26,13 @@ export const EffectivenessDashboardView: React.FC = () => {
 
   const [searchTerm, setSearchTerm] = useState<string>('');
   const [selectedMonth, setSelectedMonth] = useState<string>('2026-09');
-  const [isWorkerDropdownOpen, setIsWorkerDropdownOpen] = useState<boolean>(false);
   const [activeFilterStatus, setActiveFilterStatus] = useState<string>('ALL');
 
   // Modal State for Digital Paper Slip
   const [isSlipModalOpen, setIsSlipModalOpen] = useState<boolean>(false);
   const [slipInitialMotive, setSlipInitialMotive] = useState<PaperSlipMotive>('PERMISO_PERSONAL');
 
-  const activeWorker = workers.find((w: Worker) => w.id === selectedWorkerForStats) || workers[0];
+  const activeWorker = workers.find((w: Worker) => Number(w.id) === Number(selectedWorkerForStats)) || workers[0];
   const stats = getWorkerStats(activeWorker.id);
 
   const filteredWorkersList = workers.filter((w: Worker) => {
@@ -61,214 +57,149 @@ export const EffectivenessDashboardView: React.FC = () => {
   };
 
   return (
-    <div className="space-y-6 animate-fadeIn">
-      {/* Header & Worker Quick Selector */}
-      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 p-6 rounded-3xl bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 shadow-sm">
+    <div className="space-y-5 animate-fadeIn">
+      {/* Header Corporativo & Selector Rápido */}
+      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 p-5 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-xs">
         <div>
-          <div className="flex items-center gap-2.5 mb-1">
-            <span className="p-2 rounded-2xl bg-zinc-100 dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 border border-zinc-200 dark:border-zinc-700">
-              <Gauge className="w-5 h-5" />
+          <div className="flex items-center gap-2 mb-1">
+            <span className="p-2 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-800 dark:text-slate-200 border border-slate-200 dark:border-slate-700">
+              <Gauge className="w-4 h-4" />
             </span>
-            <h1 className="text-xl sm:text-2xl font-black text-zinc-900 dark:text-white tracking-tight">
+            <h1 className="text-xl font-bold text-slate-900 dark:text-white tracking-tight">
               Dashboard de Efectividad Individual
             </h1>
           </div>
-          <p className="text-xs sm:text-sm text-zinc-500 dark:text-zinc-400">
-            Control biométrico mensual de puntualidad (≤ 07:30 AM), tolerancia, faltas y liquidación salarial.
+          <p className="text-xs text-slate-500 dark:text-slate-400">
+            Control de puntualidad (≤ 07:30 AM), tolerancia, faltas y liquidación salarial.
           </p>
         </div>
 
-        <div className="flex flex-wrap items-center gap-3">
-          {/* Action button to create official slip */}
+        <div className="flex flex-wrap items-center gap-2.5">
           <button
             type="button"
             onClick={() => {
               setSlipInitialMotive('PERMISO_PERSONAL');
               setIsSlipModalOpen(true);
             }}
-            className="flex items-center gap-2 px-3.5 py-2 bg-black hover:bg-zinc-800 text-white dark:bg-white dark:hover:bg-zinc-200 dark:text-black text-xs font-bold rounded-xl shadow-sm transition-all hover:scale-105 active:scale-95"
+            className="flex items-center gap-1.5 px-3.5 py-2 bg-slate-900 hover:bg-slate-800 text-white dark:bg-slate-100 dark:hover:bg-slate-200 dark:text-slate-900 text-xs font-semibold rounded-lg transition-colors cursor-pointer"
           >
-            <Plus className="w-4 h-4" />
+            <Plus className="w-3.5 h-3.5" />
             <span>+ Emitir Papeleta</span>
           </button>
 
-          {/* Period Selector */}
-          <div className="flex items-center gap-2 bg-zinc-50 dark:bg-zinc-950 border border-zinc-300 dark:border-zinc-700 rounded-xl px-3 py-2 text-xs">
-            <Calendar className="w-4 h-4 text-zinc-500" />
-            <span className="font-semibold text-zinc-700 dark:text-zinc-300">Periodo:</span>
+          <div className="flex items-center gap-1.5 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-lg px-2.5 py-1.5 text-xs">
+            <Calendar className="w-3.5 h-3.5 text-slate-400" />
+            <span className="font-medium text-slate-600 dark:text-slate-400">Mes:</span>
             <select
               value={selectedMonth}
               onChange={(e) => setSelectedMonth(e.target.value)}
-              className="bg-transparent border-none text-zinc-900 dark:text-white font-bold focus:outline-none cursor-pointer"
+              className="bg-transparent border-none text-slate-900 dark:text-slate-100 font-semibold focus:outline-none cursor-pointer"
             >
-              <option value="2026-09" className="bg-white dark:bg-zinc-900">Septiembre 2026</option>
-              <option value="2026-08" className="bg-white dark:bg-zinc-900">Agosto 2026</option>
-              <option value="2026-07" className="bg-white dark:bg-zinc-900">Julio 2026</option>
+              <option value="2026-09" className="bg-white dark:bg-slate-900 text-slate-900 dark:text-white">Septiembre 2026</option>
+              <option value="2026-08" className="bg-white dark:bg-slate-900 text-slate-900 dark:text-white">Agosto 2026</option>
             </select>
           </div>
-
-          {/* Print Button */}
-          <button
-            type="button"
-            onClick={() => window.print()}
-            className="flex items-center gap-2 px-3.5 py-2 bg-zinc-100 hover:bg-zinc-200 dark:bg-zinc-800 dark:hover:bg-zinc-700 text-zinc-800 dark:text-zinc-200 text-xs font-semibold rounded-xl border border-zinc-200 dark:border-zinc-700 transition-all"
-          >
-            <Printer className="w-4 h-4" />
-            <span className="hidden sm:inline">Imprimir Ficha</span>
-          </button>
         </div>
       </div>
 
-      {/* WORKER SELECTOR BAR & QUICK SWITCHER */}
-      <div className="p-4 rounded-3xl bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 shadow-sm space-y-3">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-          <span className="text-xs font-bold text-zinc-800 dark:text-zinc-200 uppercase tracking-wider flex items-center gap-2">
-            <User className="w-4 h-4 text-zinc-500" />
-            Seleccionar Colaborador para Análisis:
+      {/* Selector Horizontal de Colaboradores */}
+      <div className="p-3.5 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-xs space-y-2.5">
+        <div className="flex items-center justify-between">
+          <span className="text-[11px] font-semibold uppercase tracking-wider text-slate-500">
+            Seleccionar Colaborador para Evaluación
           </span>
-
-          {/* Searchable Dropdown Button */}
-          <div className="relative w-full sm:w-80">
-            <button
-              type="button"
-              onClick={() => setIsWorkerDropdownOpen(!isWorkerDropdownOpen)}
-              className="w-full flex items-center justify-between px-3 py-2 bg-zinc-50 dark:bg-zinc-950 border border-zinc-300 dark:border-zinc-700 rounded-xl text-xs text-left"
-            >
-              <span className="font-bold text-zinc-900 dark:text-white truncate">
-                {activeWorker.name} ({activeWorker.code})
-              </span>
-              <ChevronDown className="w-4 h-4 text-zinc-400 shrink-0 ml-2" />
-            </button>
-
-            {isWorkerDropdownOpen && (
-              <div className="absolute left-0 right-0 top-full mt-1.5 z-50 bg-white dark:bg-zinc-900 border border-zinc-300 dark:border-zinc-700 rounded-2xl shadow-xl overflow-hidden max-h-64 flex flex-col animate-fadeIn">
-                <div className="p-2 border-b border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-950">
-                  <div className="relative">
-                    <Search className="w-3.5 h-3.5 text-zinc-400 absolute left-3 top-1/2 -translate-y-1/2" />
-                    <input
-                      type="text"
-                      autoFocus
-                      value={searchTerm}
-                      onChange={(e) => setSearchTerm(e.target.value)}
-                      placeholder="Buscar colaborador..."
-                      className="w-full pl-8 pr-3 py-1.5 bg-white dark:bg-zinc-900 border border-zinc-300 dark:border-zinc-700 rounded-lg text-xs text-zinc-900 dark:text-zinc-100 placeholder-zinc-400 focus:outline-none"
-                    />
-                  </div>
-                </div>
-
-                <div className="overflow-y-auto divide-y divide-zinc-100 dark:divide-zinc-800">
-                  {filteredWorkersList.map((w: Worker) => (
-                    <button
-                      key={w.id}
-                      type="button"
-                      onClick={() => {
-                        setSelectedWorkerForStats(w.id);
-                        setIsWorkerDropdownOpen(false);
-                      }}
-                      className={`w-full flex items-center justify-between p-2.5 text-left hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors ${
-                        w.id === activeWorker.id ? 'bg-zinc-100 dark:bg-zinc-800 font-bold' : ''
-                      }`}
-                    >
-                      <div className="flex items-center gap-2.5 min-w-0">
-                        <img
-                          src={w.avatarUrl}
-                          alt={w.name}
-                          className="w-7 h-7 rounded-md object-cover border border-zinc-300 dark:border-zinc-700 shrink-0"
-                        />
-                        <div className="min-w-0">
-                          <p className="text-xs text-zinc-900 dark:text-white truncate">{w.name}</p>
-                          <p className="text-[10px] text-zinc-500 truncate">{w.position}</p>
-                        </div>
-                      </div>
-                      <Badge value={w.type} size="sm" />
-                    </button>
-                  ))}
-                </div>
-              </div>
-            )}
+          <div className="relative w-48">
+            <Search className="w-3 h-3 text-slate-400 absolute left-2 top-1/2 -translate-y-1/2" />
+            <input
+              type="text"
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              placeholder="Filtrar colaboradores..."
+              className="w-full pl-6 pr-2 py-1 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-md text-[11px] focus:outline-none"
+            />
           </div>
         </div>
 
-        {/* Quick Avatar Strip */}
-        <div className="flex items-center gap-2 overflow-x-auto pb-1 pt-1">
-          {workers.map((w: Worker) => {
-            const isSelected = w.id === activeWorker.id;
+        <div className="flex items-center gap-2 overflow-x-auto pb-1">
+          {filteredWorkersList.map((w) => {
+            const isSelected = Number(w.id) === Number(activeWorker.id);
             return (
               <button
                 key={w.id}
                 type="button"
                 onClick={() => setSelectedWorkerForStats(w.id)}
-                className={`flex items-center gap-2 px-3 py-1.5 rounded-xl border shrink-0 transition-all ${
+                className={`flex items-center gap-2 px-2.5 py-1.5 rounded-lg border shrink-0 transition-colors cursor-pointer text-xs ${
                   isSelected
-                    ? 'bg-black text-white border-black dark:bg-white dark:text-black dark:border-white shadow-sm'
-                    : 'bg-zinc-50 dark:bg-zinc-950 text-zinc-700 dark:text-zinc-300 border-zinc-200 dark:border-zinc-800 hover:border-zinc-400'
+                    ? 'bg-slate-900 text-white border-slate-900 dark:bg-slate-100 dark:text-slate-900 dark:border-slate-100 font-semibold shadow-xs'
+                    : 'bg-slate-50 dark:bg-slate-950 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-800 hover:bg-slate-100'
                 }`}
               >
                 <img
                   src={w.avatarUrl}
                   alt={w.name}
-                  className="w-6 h-6 rounded-md object-cover border border-zinc-300 dark:border-zinc-700"
+                  className="w-5 h-5 rounded-md object-cover border border-slate-300 dark:border-slate-700"
                 />
-                <span className="text-xs font-semibold truncate max-w-[120px]">{w.name.split(' ')[0]}</span>
+                <span className="truncate max-w-[130px]">{w.name}</span>
               </button>
             );
           })}
         </div>
       </div>
 
-      {/* WORKER IDENTITY CARD & OPERATIONAL RULES BANNER */}
-      <div className="p-6 rounded-3xl bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 shadow-sm flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
-        <div className="flex items-center gap-4 min-w-0">
+      {/* Ficha de Identidad & Directiva de Tolerancia */}
+      <div className="p-5 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-xs flex flex-col md:flex-row items-start md:items-center justify-between gap-5">
+        <div className="flex items-center gap-3.5 min-w-0">
           <img
             src={activeWorker.avatarUrl}
             alt={activeWorker.name}
-            className="w-20 h-20 rounded-2xl object-cover border-2 border-zinc-300 dark:border-zinc-700 shadow-sm shrink-0"
+            className="w-16 h-16 rounded-xl object-cover border border-slate-300 dark:border-slate-700 shrink-0"
           />
           <div className="min-w-0 space-y-1">
             <div className="flex flex-wrap items-center gap-2">
-              <h2 className="text-lg sm:text-xl font-bold text-zinc-900 dark:text-white truncate">
+              <h2 className="text-base sm:text-lg font-bold text-slate-900 dark:text-white truncate">
                 {activeWorker.name}
               </h2>
               <Badge value={activeWorker.type} size="sm" />
               <Badge value={activeWorker.status} size="sm" />
             </div>
-            <p className="text-xs text-zinc-600 dark:text-zinc-400 font-medium">
+            <p className="text-xs text-slate-600 dark:text-slate-400 font-medium">
               {activeWorker.position} • <span className="font-semibold">{activeWorker.department}</span>
             </p>
-            <div className="flex flex-wrap items-center gap-3 text-xs text-zinc-500 dark:text-zinc-400 font-mono pt-1">
-              <span>DNI: <strong className="text-zinc-800 dark:text-zinc-200">{activeWorker.dni}</strong></span>
+            <div className="flex flex-wrap items-center gap-2 text-xs text-slate-500 font-mono pt-0.5">
+              <span>ID: <strong className="text-slate-800 dark:text-slate-200">#{activeWorker.id}</strong></span>
               <span>•</span>
-              <span>Cod: <strong className="text-zinc-800 dark:text-zinc-200">{activeWorker.code}</strong></span>
+              <span>DNI: <strong className="text-slate-800 dark:text-slate-200">{activeWorker.dni}</strong></span>
               <span>•</span>
-              <span>Tag RFID: <strong className="text-zinc-800 dark:text-zinc-200">{activeWorker.rfidTag}</strong></span>
+              <span>Tag RFID: <strong className="text-slate-800 dark:text-slate-200">{activeWorker.rfidTag}</strong></span>
             </div>
           </div>
         </div>
 
-        {/* Business Rules Summary Banner */}
-        <div className="p-4 rounded-2xl bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 text-xs text-zinc-600 dark:text-zinc-400 max-w-md space-y-1">
-          <span className="font-bold text-zinc-900 dark:text-white block uppercase tracking-wider text-[10px]">
-            Reglas de Asistencia y Tolerancia:
+        {/* Resumen de directiva */}
+        <div className="p-3 rounded-lg bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 text-xs text-slate-600 dark:text-slate-400 max-w-sm space-y-1">
+          <span className="font-semibold text-slate-800 dark:text-slate-200 block text-[10px] uppercase tracking-wider">
+            Directiva Operativa:
           </span>
-          <p className="text-[11px] leading-snug">
-            • <strong>A tiempo:</strong> Marcación hasta las <strong>07:30:00 AM</strong>.<br />
-            • <strong>Tardanza con descuento:</strong> De <strong>07:30:01 AM a 07:35:00 AM</strong>.<br />
-            • <strong>Puerta Cerrada:</strong> Pasadas las <strong>07:35 AM</strong> (Falta por defecto; ingreso extraordinario requiere autorización exclusiva de Jefe de Planta o Gerente General).
+          <p className="text-[11px] leading-tight">
+            • <strong>A tiempo:</strong> Marcación ≤ <strong>07:30:00 AM</strong>.<br />
+            • <strong>Tardanza:</strong> 07:30:01 a 07:35:00 AM (Descuento computable).<br />
+            • <strong>Puerta cerrada:</strong> &gt; 07:35 AM (Falta; requiere autorización de Planta).
           </p>
         </div>
       </div>
 
-      {/* VACATION 1-YEAR PROGRESS TRACKER */}
+      {/* RASTREADOR DE VACACIONES CON REGLA ESTRICTA DE 365 DÍAS */}
       {activeWorker.type === 'EMPLEADO_INTERNO' && (
         <VacationTracker
-          hireDate={activeWorker.hireDate}
+          hireDate={activeWorker.fecha_ingreso || activeWorker.hireDate}
           vacationDaysAvailable={activeWorker.vacationDaysAvailable}
           workerName={activeWorker.name}
+          workerType={activeWorker.type}
           onRequestVacation={handleOpenVacationModal}
         />
       )}
 
-      {/* TOP 4 EFFECTIVENESS KPIS */}
+      {/* TOP 4 KPIS */}
       <EffectivenessKPIs
         attendedDays={stats.attendedDays}
         totalWorkdays={stats.totalWorkdays}
@@ -280,9 +211,8 @@ export const EffectivenessDashboardView: React.FC = () => {
         baseSalary={stats.baseSalary}
       />
 
-      {/* CENTER GRID: CIRCULAR DONUT GAUGE (LEFT) + INTERACTIVE CALENDAR (RIGHT) */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-        {/* Left: Prominent Circular Effectiveness Gauge (5 Cols) */}
+      {/* GRID: GAUGE & CALENDARIO */}
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-5">
         <div className="lg:col-span-5">
           <EffectivenessGauge
             effectivenessPercentage={stats.effectivenessPercentage}
@@ -299,7 +229,6 @@ export const EffectivenessDashboardView: React.FC = () => {
           />
         </div>
 
-        {/* Right: Interactive Monthly Calendar (7 Cols) */}
         <div className="lg:col-span-7">
           <AttendanceCalendar
             dailyLogs={stats.dailyLogs}
@@ -310,28 +239,27 @@ export const EffectivenessDashboardView: React.FC = () => {
         </div>
       </div>
 
-      {/* DAILY ATTENDANCE BREAKDOWN TABLE */}
-      <div className="p-6 rounded-3xl bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 shadow-sm space-y-4">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-zinc-200 dark:border-zinc-800">
+      {/* TABLA DÍA A DÍA */}
+      <div className="p-5 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-xs space-y-3.5">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-slate-200 dark:border-slate-800">
           <div>
-            <h3 className="text-sm font-bold text-zinc-900 dark:text-white uppercase tracking-wider flex items-center gap-2">
-              <Clock className="w-4 h-4 text-zinc-500" />
+            <h3 className="text-xs font-bold text-slate-900 dark:text-white uppercase tracking-wider flex items-center gap-1.5">
+              <Clock className="w-3.5 h-3.5 text-slate-500" />
               Bitácora Detallada Día a Día ({stats.month})
             </h3>
-            <p className="text-xs text-zinc-500">
-              Detalle cronológico de registros de entrada, tolerancia y afectación en liquidación salarial.
+            <p className="text-xs text-slate-500">
+              Registros de entrada, tolerancia y afectación salarial.
             </p>
           </div>
 
-          {/* Filter Pills */}
-          <div className="flex items-center gap-1.5 overflow-x-auto">
+          <div className="flex items-center gap-1 overflow-x-auto text-xs">
             <button
               type="button"
               onClick={() => setActiveFilterStatus('ALL')}
-              className={`px-3 py-1 rounded-lg text-xs font-semibold transition-all ${
+              className={`px-2.5 py-1 rounded-md font-medium transition-colors cursor-pointer ${
                 activeFilterStatus === 'ALL'
-                  ? 'bg-black text-white dark:bg-white dark:text-black'
-                  : 'text-zinc-500 hover:text-zinc-900 dark:hover:text-white'
+                  ? 'bg-slate-900 text-white dark:bg-slate-100 dark:text-slate-900 font-semibold'
+                  : 'text-slate-600 dark:text-slate-400 hover:text-slate-900'
               }`}
             >
               Todos ({stats.dailyLogs.length})
@@ -339,21 +267,21 @@ export const EffectivenessDashboardView: React.FC = () => {
             <button
               type="button"
               onClick={() => setActiveFilterStatus('WORKDAYS')}
-              className={`px-3 py-1 rounded-lg text-xs font-semibold transition-all ${
+              className={`px-2.5 py-1 rounded-md font-medium transition-colors cursor-pointer ${
                 activeFilterStatus === 'WORKDAYS'
-                  ? 'bg-black text-white dark:bg-white dark:text-black'
-                  : 'text-zinc-500 hover:text-zinc-900 dark:hover:text-white'
+                  ? 'bg-slate-900 text-white dark:bg-slate-100 dark:text-slate-900 font-semibold'
+                  : 'text-slate-600 dark:text-slate-400 hover:text-slate-900'
               }`}
             >
-              Laborables ({stats.dailyLogs.filter((l) => l.isWorkday).length})
+              Laborables
             </button>
             <button
               type="button"
               onClick={() => setActiveFilterStatus('TARDANZA_DESCUENTO')}
-              className={`px-3 py-1 rounded-lg text-xs font-semibold transition-all ${
+              className={`px-2.5 py-1 rounded-md font-medium transition-colors cursor-pointer ${
                 activeFilterStatus === 'TARDANZA_DESCUENTO'
-                  ? 'bg-black text-white dark:bg-white dark:text-black'
-                  : 'text-zinc-500 hover:text-zinc-900 dark:hover:text-white'
+                  ? 'bg-slate-900 text-white dark:bg-slate-100 dark:text-slate-900 font-semibold'
+                  : 'text-slate-600 dark:text-slate-400 hover:text-slate-900'
               }`}
             >
               Tardanzas ({stats.tardyDays})
@@ -361,10 +289,10 @@ export const EffectivenessDashboardView: React.FC = () => {
             <button
               type="button"
               onClick={() => setActiveFilterStatus('PUERTA_CERRADA')}
-              className={`px-3 py-1 rounded-lg text-xs font-semibold transition-all ${
+              className={`px-2.5 py-1 rounded-md font-medium transition-colors cursor-pointer ${
                 activeFilterStatus === 'PUERTA_CERRADA'
-                  ? 'bg-black text-white dark:bg-white dark:text-black'
-                  : 'text-zinc-500 hover:text-zinc-900 dark:hover:text-white'
+                  ? 'bg-slate-900 text-white dark:bg-slate-100 dark:text-slate-900 font-semibold'
+                  : 'text-slate-600 dark:text-slate-400 hover:text-slate-900'
               }`}
             >
               Puerta Cerrada
@@ -372,10 +300,10 @@ export const EffectivenessDashboardView: React.FC = () => {
             <button
               type="button"
               onClick={() => setActiveFilterStatus('JUSTIFICADO')}
-              className={`px-3 py-1 rounded-lg text-xs font-semibold transition-all ${
+              className={`px-2.5 py-1 rounded-md font-medium transition-colors cursor-pointer ${
                 activeFilterStatus === 'JUSTIFICADO'
-                  ? 'bg-black text-white dark:bg-white dark:text-black'
-                  : 'text-zinc-500 hover:text-zinc-900 dark:hover:text-white'
+                  ? 'bg-slate-900 text-white dark:bg-slate-100 dark:text-slate-900 font-semibold'
+                  : 'text-slate-600 dark:text-slate-400 hover:text-slate-900'
               }`}
             >
               Permisos ({stats.justifiedDays})
@@ -383,91 +311,78 @@ export const EffectivenessDashboardView: React.FC = () => {
           </div>
         </div>
 
-        {/* Daily Logs Table */}
         <div className="overflow-x-auto">
-          <table className="w-full text-left text-xs text-zinc-700 dark:text-zinc-300">
-            <thead className="bg-zinc-50 dark:bg-zinc-950 text-[10px] font-bold uppercase tracking-wider text-zinc-500 border-b border-zinc-200 dark:border-zinc-800">
+          <table className="w-full text-left text-xs text-slate-700 dark:text-slate-300">
+            <thead className="bg-slate-50 dark:bg-slate-950 text-[11px] font-semibold text-slate-500 dark:text-slate-400 border-b border-slate-200 dark:border-slate-800">
               <tr>
-                <th className="py-3 px-3">Día & Fecha</th>
-                <th className="py-3 px-3">Hora de Ingreso</th>
-                <th className="py-3 px-3">Tolerancia / Tardanza</th>
-                <th className="py-3 px-3">Hora de Salida</th>
-                <th className="py-3 px-3">Estado Computado</th>
-                <th className="py-3 px-3">Observación RRHH</th>
+                <th className="py-2.5 px-3">Día & Fecha</th>
+                <th className="py-2.5 px-3">Hora Ingreso</th>
+                <th className="py-2.5 px-3">Tolerancia / Tardanza</th>
+                <th className="py-2.5 px-3">Hora Salida</th>
+                <th className="py-2.5 px-3">Estado</th>
+                <th className="py-2.5 px-3">Observación</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-zinc-200 dark:divide-zinc-800">
+            <tbody className="divide-y divide-slate-200 dark:divide-slate-800">
               {filteredDailyLogs.map((log: DailyAttendanceSummary) => {
                 return (
                   <tr
                     key={log.date}
-                    className={`hover:bg-zinc-50 dark:hover:bg-zinc-800/50 transition-colors ${
-                      !log.isWorkday ? 'opacity-50 bg-zinc-50/50 dark:bg-zinc-950/50' : ''
+                    className={`hover:bg-slate-50/80 dark:hover:bg-slate-800/40 transition-colors ${
+                      !log.isWorkday ? 'opacity-50 bg-slate-50/50 dark:bg-slate-950/50' : ''
                     }`}
                   >
-                    <td className="py-3 px-3">
+                    <td className="py-2.5 px-3">
                       <div className="flex items-center gap-2">
-                        <span className="w-6 h-6 rounded-md bg-zinc-100 dark:bg-zinc-800 font-mono font-bold flex items-center justify-center text-zinc-900 dark:text-zinc-100 text-[11px]">
+                        <span className="w-5 h-5 rounded bg-slate-100 dark:bg-slate-800 font-mono font-bold flex items-center justify-center text-slate-800 dark:text-slate-200 text-[10px]">
                           {log.dayNumber}
                         </span>
                         <div>
-                          <span className="font-bold text-zinc-900 dark:text-white block">
+                          <span className="font-semibold text-slate-900 dark:text-white block">
                             {log.dayName} {log.dayNumber}
                           </span>
-                          <span className="text-[10px] text-zinc-500">{log.date}</span>
+                          <span className="text-[10px] text-slate-400">{log.date}</span>
                         </div>
                       </div>
                     </td>
 
-                    <td className="py-3 px-3">
-                      {log.checkInTime ? (
-                        <span className="font-mono font-bold text-zinc-900 dark:text-white block">
-                          {log.checkInTime} AM
-                        </span>
-                      ) : (
-                        <span className="text-zinc-400 italic">--:--:--</span>
-                      )}
+                    <td className="py-2.5 px-3 font-mono">
+                      {log.checkInTime ? `${log.checkInTime} AM` : '--:--:--'}
                     </td>
 
-                    <td className="py-3 px-3">
+                    <td className="py-2.5 px-3">
                       {log.status === 'TARDANZA_DESCUENTO' ? (
-                        <span className="font-mono text-zinc-900 dark:text-zinc-100 font-bold">
-                          +{log.delayMinutes} min sobre 07:30
+                        <span className="font-mono text-slate-900 dark:text-slate-100 font-semibold">
+                          +{log.delayMinutes} min sobre 7:30
                         </span>
                       ) : log.status === 'A_TIEMPO' && log.checkInTime ? (
-                        <span className="text-zinc-700 dark:text-zinc-300 font-semibold">
-                          A tiempo (≤ 07:30)
+                        <span className="text-emerald-700 dark:text-emerald-400 font-medium">
+                          A tiempo (≤ 7:30)
                         </span>
                       ) : log.status === 'PUERTA_CERRADA' ? (
-                        <span className="text-zinc-900 dark:text-white font-mono font-bold">
+                        <span className="text-red-700 dark:text-red-400 font-mono font-semibold">
                           &gt; 07:35 AM ({log.delayMinutes} min)
                         </span>
                       ) : (
-                        <span className="text-zinc-400">--</span>
+                        <span className="text-slate-400">--</span>
                       )}
                     </td>
 
-                    <td className="py-3 px-3">
-                      {log.checkOutTime ? (
-                        <span className="font-mono text-zinc-700 dark:text-zinc-300">
-                          {log.checkOutTime} PM
-                        </span>
-                      ) : (
-                        <span className="text-zinc-400">--</span>
-                      )}
+                    <td className="py-2.5 px-3 font-mono">
+                      {log.checkOutTime ? `${log.checkOutTime} PM` : '--'}
                     </td>
 
-                    <td className="py-3 px-3">
+                    <td className="py-2.5 px-3">
                       {log.isWorkday ? (
                         <Badge value={log.status} size="sm" />
                       ) : (
-                        <span className="text-[10px] text-zinc-400 bg-zinc-100 dark:bg-zinc-800 px-2 py-0.5 rounded">
+                        <span className="text-[10px] text-slate-400 bg-slate-100 dark:bg-slate-800 px-1.5 py-0.5 rounded">
                           No Laborable
                         </span>
                       )}
                     </td>
 
-                    <td className="py-3 px-3 text-zinc-600 dark:text-zinc-400">
+                    <td className="py-2.5 px-3 text-slate-500 max-w-xs truncate">
                       {log.notes}
                     </td>
                   </tr>
@@ -478,17 +393,17 @@ export const EffectivenessDashboardView: React.FC = () => {
         </div>
       </div>
 
-      {/* PAPER SLIP MODAL */}
-      <PaperSlipModal
-        isOpen={isSlipModalOpen}
-        onClose={() => setIsSlipModalOpen(false)}
-        workers={workers}
-        initialWorkerId={activeWorker.id}
-        initialMotive={slipInitialMotive}
-        onSubmitSlip={(newSlip) => {
-          addPaperSlip(newSlip);
-        }}
-      />
+      {/* Modal de Papeleta Oficial */}
+      {isSlipModalOpen && (
+        <PaperSlipModal
+          isOpen={isSlipModalOpen}
+          onClose={() => setIsSlipModalOpen(false)}
+          workers={workers.filter((w) => w.type === 'EMPLEADO_INTERNO')}
+          initialWorkerId={activeWorker.id}
+          initialMotive={slipInitialMotive}
+          onSubmitSlip={(newSlip) => addPaperSlip(newSlip)}
+        />
+      )}
     </div>
   );
 };

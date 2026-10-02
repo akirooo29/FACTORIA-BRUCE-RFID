@@ -8,10 +8,18 @@ import type {
   VacationNotification,
   RequestItem,
 } from '../types';
+import { getVacationProgressFromWorker } from '../utils/vacationCalculator';
 
+/**
+ * Padrón Inicial de Colaboradores de Factoría Bruce S.A.
+ * Cada trabajador posee:
+ * - id: Entero único (Compatible con clave primaria IDENTITY de SQL Server / C# ASP.NET / Node.js)
+ * - fecha_ingreso: Fecha formal de inicio (Sujeta a regla de 365 días para vacaciones)
+ * - Régimen: Planilla Interna vs Contratista
+ */
 export const INITIAL_WORKERS: Worker[] = [
   {
-    id: 'W-001',
+    id: 1,
     code: 'FBR-1001',
     name: 'Ing. Carlos Mendoza Silva',
     dni: '45892134',
@@ -24,11 +32,12 @@ export const INITIAL_WORKERS: Worker[] = [
     status: 'ACTIVO',
     avatarUrl: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80',
     baseSalary: 4800,
+    fecha_ingreso: '2021-03-15',
     hireDate: '2021-03-15',
-    vacationDaysAvailable: 18,
+    vacationDaysAvailable: 18, // Supera 365 días -> Habilitado
   },
   {
-    id: 'W-002',
+    id: 2,
     code: 'FBR-1002',
     name: 'Lic. Mariana Vega Ríos',
     dni: '47620193',
@@ -41,11 +50,12 @@ export const INITIAL_WORKERS: Worker[] = [
     status: 'ACTIVO',
     avatarUrl: 'https://images.unsplash.com/photo-1580489944761-15a19d654956?w=150&auto=format&fit=crop&q=80',
     baseSalary: 3800,
+    fecha_ingreso: '2022-01-10',
     hireDate: '2022-01-10',
-    vacationDaysAvailable: 12,
+    vacationDaysAvailable: 12, // Supera 365 días -> Habilitado
   },
   {
-    id: 'W-003',
+    id: 3,
     code: 'FBR-1003',
     name: 'Jorge Luis Huamán Prado',
     dni: '41209384',
@@ -58,11 +68,12 @@ export const INITIAL_WORKERS: Worker[] = [
     status: 'ACTIVO',
     avatarUrl: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&auto=format&fit=crop&q=80',
     baseSalary: 3200,
+    fecha_ingreso: '2020-08-01',
     hireDate: '2020-08-01',
-    vacationDaysAvailable: 24,
+    vacationDaysAvailable: 24, // Supera 365 días -> Habilitado
   },
   {
-    id: 'W-004',
+    id: 4,
     code: 'FBR-1004',
     name: 'Valeria Quispe Paredes',
     dni: '70291834',
@@ -75,12 +86,13 @@ export const INITIAL_WORKERS: Worker[] = [
     status: 'ACTIVO',
     avatarUrl: 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=150&auto=format&fit=crop&q=80',
     baseSalary: 3600,
-    // Hired 352 days ago (2025-10-01) - near 1-year threshold (96% progress towards 30 days)
-    hireDate: '2025-10-01',
+    // Ingresó hace menos de 365 días (2025-10-15) -> 0 días / "No habilitado"
+    fecha_ingreso: '2025-10-15',
+    hireDate: '2025-10-15',
     vacationDaysAvailable: 0,
   },
   {
-    id: 'W-005',
+    id: 5,
     code: 'FBR-1005',
     name: 'Ing. Renzo Chávez Meléndez',
     dni: '42819034',
@@ -93,12 +105,13 @@ export const INITIAL_WORKERS: Worker[] = [
     status: 'ACTIVO',
     avatarUrl: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=150&auto=format&fit=crop&q=80',
     baseSalary: 4200,
-    // Hired 6 months ago (2026-03-15) - 50% progress towards 1-year vacation entitlement
+    // Ingresó hace ~6 meses (2026-03-15) -> 0 días / "No habilitado"
+    fecha_ingreso: '2026-03-15',
     hireDate: '2026-03-15',
     vacationDaysAvailable: 0,
   },
   {
-    id: 'W-006',
+    id: 6,
     code: 'CNT-2001',
     name: 'Roberto Benítez Alarcón',
     dni: '38910245',
@@ -111,6 +124,8 @@ export const INITIAL_WORKERS: Worker[] = [
     status: 'ACTIVO',
     avatarUrl: 'https://images.unsplash.com/photo-1522075469751-3a6694fb2f61?w=150&auto=format&fit=crop&q=80',
     baseSalary: 2900,
+    fecha_ingreso: '2024-05-10',
+    hireDate: '2024-05-10',
     contractorCompany: 'Electromecánica del Norte S.A.C.',
     contractExpiry: '2026-12-31',
     sctrStatus: 'VIGENTE',
@@ -118,7 +133,7 @@ export const INITIAL_WORKERS: Worker[] = [
     supervisorName: 'Ing. Carlos Mendoza Silva',
   },
   {
-    id: 'W-007',
+    id: 7,
     code: 'CNT-2002',
     name: 'Patricia Gómez Chumpitaz',
     dni: '48201948',
@@ -131,6 +146,8 @@ export const INITIAL_WORKERS: Worker[] = [
     status: 'ACTIVO',
     avatarUrl: 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=150&auto=format&fit=crop&q=80',
     baseSalary: 3100,
+    fecha_ingreso: '2025-01-20',
+    hireDate: '2025-01-20',
     contractorCompany: 'SegurServicio Industrial Corp',
     contractExpiry: '2026-10-15',
     sctrStatus: 'VIGENTE',
@@ -138,7 +155,7 @@ export const INITIAL_WORKERS: Worker[] = [
     supervisorName: 'Lic. Mariana Vega Ríos',
   },
   {
-    id: 'W-008',
+    id: 8,
     code: 'CNT-2003',
     name: 'Diego Fernando Morales Torres',
     dni: '46718290',
@@ -151,6 +168,8 @@ export const INITIAL_WORKERS: Worker[] = [
     status: 'ACTIVO',
     avatarUrl: 'https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?w=150&auto=format&fit=crop&q=80',
     baseSalary: 3500,
+    fecha_ingreso: '2025-06-01',
+    hireDate: '2025-06-01',
     contractorCompany: 'TechLogix Soluciones Digitales',
     contractExpiry: '2026-11-30',
     sctrStatus: 'VIGENTE',
@@ -162,7 +181,7 @@ export const INITIAL_WORKERS: Worker[] = [
 export const INITIAL_ATTENDANCE: AttendanceRecord[] = [
   {
     id: 'ATT-901',
-    workerId: 'W-001',
+    workerId: 1,
     workerName: 'Ing. Carlos Mendoza Silva',
     workerType: 'EMPLEADO_INTERNO',
     workerPosition: 'Jefe de Operaciones Mecánicas',
@@ -182,7 +201,7 @@ export const INITIAL_ATTENDANCE: AttendanceRecord[] = [
   },
   {
     id: 'ATT-902',
-    workerId: 'W-002',
+    workerId: 2,
     workerName: 'Lic. Mariana Vega Ríos',
     workerType: 'EMPLEADO_INTERNO',
     workerPosition: 'Coordinadora de Talento y Bienestar',
@@ -202,7 +221,7 @@ export const INITIAL_ATTENDANCE: AttendanceRecord[] = [
   },
   {
     id: 'ATT-903',
-    workerId: 'W-003',
+    workerId: 3,
     workerName: 'Jorge Luis Huamán Prado',
     workerType: 'EMPLEADO_INTERNO',
     workerPosition: 'Técnico Especialista CNC',
@@ -222,7 +241,7 @@ export const INITIAL_ATTENDANCE: AttendanceRecord[] = [
   },
   {
     id: 'ATT-904',
-    workerId: 'W-005',
+    workerId: 5,
     workerName: 'Ing. Renzo Chávez Meléndez',
     workerType: 'EMPLEADO_INTERNO',
     workerPosition: 'Ingeniero de Procesos y Soldadura',
@@ -244,7 +263,7 @@ export const INITIAL_ATTENDANCE: AttendanceRecord[] = [
   },
   {
     id: 'ATT-905',
-    workerId: 'W-006',
+    workerId: 6,
     workerName: 'Roberto Benítez Alarcón',
     workerType: 'CONTRATISTA',
     workerPosition: 'Técnico de Alta Tensión Externo',
@@ -269,7 +288,7 @@ export const INITIAL_PAPER_SLIPS: PaperSlipRecord[] = [
   {
     id: 'SLIP-001',
     folioNumber: 'PAP-2026-0038',
-    workerId: 'W-001',
+    workerId: 1,
     workerName: 'Ing. Carlos Mendoza Silva',
     workerPosition: 'Jefe de Operaciones Mecánicas',
     workerDni: '45892134',
@@ -288,7 +307,7 @@ export const INITIAL_PAPER_SLIPS: PaperSlipRecord[] = [
   {
     id: 'SLIP-002',
     folioNumber: 'PAP-2026-0039',
-    workerId: 'W-004',
+    workerId: 4,
     workerName: 'Valeria Quispe Paredes',
     workerPosition: 'Supervisora QA/QC Metalúrgico',
     workerDni: '70291834',
@@ -308,7 +327,7 @@ export const INITIAL_PAPER_SLIPS: PaperSlipRecord[] = [
   {
     id: 'SLIP-003',
     folioNumber: 'PAP-2026-0040',
-    workerId: 'W-003',
+    workerId: 3,
     workerName: 'Jorge Luis Huamán Prado',
     workerPosition: 'Técnico Especialista CNC',
     workerDni: '41209384',
@@ -327,7 +346,7 @@ export const INITIAL_PAPER_SLIPS: PaperSlipRecord[] = [
   {
     id: 'SLIP-004',
     folioNumber: 'PAP-2026-0043',
-    workerId: 'W-005',
+    workerId: 5,
     workerName: 'Ing. Renzo Chávez Meléndez',
     workerPosition: 'Ingeniero de Procesos y Soldadura',
     workerDni: '42819034',
@@ -349,7 +368,7 @@ export const INITIAL_PAPER_SLIPS: PaperSlipRecord[] = [
 export const INITIAL_REQUESTS: RequestItem[] = [
   {
     id: 'REQ-101',
-    workerId: 'W-001',
+    workerId: 1,
     workerName: 'Ing. Carlos Mendoza Silva',
     workerType: 'EMPLEADO_INTERNO',
     type: 'VACACIONES',
@@ -362,7 +381,7 @@ export const INITIAL_REQUESTS: RequestItem[] = [
   },
   {
     id: 'REQ-102',
-    workerId: 'W-004',
+    workerId: 4,
     workerName: 'Valeria Quispe Paredes',
     workerType: 'EMPLEADO_INTERNO',
     type: 'PERMISO',
@@ -375,7 +394,7 @@ export const INITIAL_REQUESTS: RequestItem[] = [
   },
   {
     id: 'REQ-103',
-    workerId: 'W-003',
+    workerId: 3,
     workerName: 'Jorge Luis Huamán Prado',
     workerType: 'EMPLEADO_INTERNO',
     type: 'DESCANSO_MEDICO',
@@ -391,17 +410,17 @@ export const INITIAL_REQUESTS: RequestItem[] = [
 export const INITIAL_VACATION_NOTIFICATIONS: VacationNotification[] = [
   {
     id: 'NOTIF-001',
-    workerId: 'W-004',
+    workerId: 4,
     workerName: 'Valeria Quispe Paredes',
     workerPosition: 'Supervisora QA/QC Metalúrgico',
     type: 'UPCOMING_30_DAYS',
-    message: 'Cumplirá 1 año de contrato el 01/10/2026 (a 13 días). Habilitación legal de 30 días de vacaciones.',
+    message: 'Colaborador próximo a cumplir 1 año (365 días) de labor continua el 15/10/2026. Habilitará 30 días de vacaciones legales.',
     date: '2026-09-18',
     read: false,
   },
   {
     id: 'NOTIF-002',
-    workerId: 'W-003',
+    workerId: 3,
     workerName: 'Jorge Luis Huamán Prado',
     workerPosition: 'Técnico Especialista CNC',
     type: 'ELIGIBLE_NOW',
@@ -411,7 +430,7 @@ export const INITIAL_VACATION_NOTIFICATIONS: VacationNotification[] = [
   },
   {
     id: 'NOTIF-003',
-    workerId: 'W-001',
+    workerId: 1,
     workerName: 'Ing. Carlos Mendoza Silva',
     workerPosition: 'Jefe de Operaciones Mecánicas',
     type: 'ELIGIBLE_NOW',
@@ -421,41 +440,24 @@ export const INITIAL_VACATION_NOTIFICATIONS: VacationNotification[] = [
   }
 ];
 
-// Helper to compute vacation entitlement progress based on hire date
+// Helper retrocompatible adaptado con la regla estricta de 365 días
 export const calculateVacationProgress = (hireDateStr?: string, daysAvailable = 30): VacationProgress => {
-  const hireDate = hireDateStr ? new Date(hireDateStr) : new Date(2025, 9, 1);
-  const now = new Date(2026, 8, 18); // 18 Sept 2026
-  
-  const diffTime = Math.max(0, now.getTime() - hireDate.getTime());
-  const daysEmployed = Math.floor(diffTime / (1000 * 60 * 60 * 24));
-  const daysRequiredForYear = 365;
-
-  const isEligibleFor30Days = daysEmployed >= daysRequiredForYear;
-  const progressPercentage = Math.min(100, Math.round((daysEmployed / daysRequiredForYear) * 100));
-  const daysRemainingUntilYear = Math.max(0, daysRequiredForYear - daysEmployed);
-
-  return {
-    hireDate: hireDateStr || '2025-10-01',
-    currentDate: '2026-09-18',
-    daysEmployed,
-    daysRequiredForYear,
-    progressPercentage,
-    isEligibleFor30Days,
-    daysRemainingUntilYear,
-    vacationDaysAvailable: isEligibleFor30Days ? daysAvailable : 0,
-  };
+  return getVacationProgressFromWorker({
+    type: 'EMPLEADO_INTERNO',
+    fecha_ingreso: hireDateStr || '2025-10-15',
+    vacationDaysAvailable: daysAvailable,
+  });
 };
 
-// Generador de estadísticas mensuales para Septiembre 2026 con reglas operativas exactas:
-// - ≤ 07:30:00: A_TIEMPO
-// - 07:30:01 a 07:35:00: TARDANZA_DESCUENTO (ingreso permitido, computable con [Sueldo/8h/60min])
-// - > 07:35:00: PUERTA_CERRADA (Falta por defecto; requiere autorización exclusiva de Jefe de Planta o Gerente General)
-// - JUSTIFICADO: Días de permiso o descanso no restan el % de efectividad
-export const generateMonthlyStats = (workerId: string, workersList: Worker[]): WorkerMonthlyStats => {
-  const worker = workersList.find((w) => w.id === workerId) || workersList[0];
+/**
+ * Generador de estadísticas mensuales para Septiembre 2026
+ */
+export const generateMonthlyStats = (workerId: number | string, workersList: Worker[]): WorkerMonthlyStats => {
+  const numId = typeof workerId === 'number' ? workerId : parseInt(String(workerId).replace(/\D/g, ''), 10) || 1;
+  const worker = workersList.find((w) => w.id === numId) || workersList[0];
   const baseSalary = worker.baseSalary || 3500;
   
-  const seed = workerId.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
+  const seed = numId * 47;
   const dayNames = ['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb'];
   const dailyLogs: DailyAttendanceSummary[] = [];
 
@@ -520,32 +522,30 @@ export const generateMonthlyStats = (workerId: string, workersList: Worker[]): W
     let authorizationDocId: string | undefined;
 
     // Worker specific realistic scenarios
-    if (workerId === 'W-001') {
+    if (numId === 1) {
       // Ing. Carlos Mendoza
       if (d === 18) {
         checkInTime = '07:22:15';
         status = 'A_TIEMPO';
         notes = 'Ingreso puntual a tiempo (≤ 07:30 AM)';
       } else if (d === 8) {
-        // Tardanza con descuento (7:30 - 7:35)
         status = 'TARDANZA_DESCUENTO';
         checkInTime = '07:33:45';
         delayMinutes = 3;
         notes = 'Tardanza en rango de tolerancia (+3 min). Descuento [Sueldo/8h/60min]';
       } else if (d === 14) {
-        // Justificado con comisión de servicio
         status = 'JUSTIFICADO';
         checkInTime = undefined;
         checkOutTime = undefined;
         slipMotive = 'COMISION_SERVICIO';
         notes = 'Comisión de Servicio oficial: Inspección en maestranza Trujillo';
       } else {
-        const mins = 15 + Math.floor(randVal * 14); // 07:15 to 07:29
+        const mins = 15 + Math.floor(randVal * 14);
         checkInTime = `07:${mins.toString().padStart(2, '0')}:12`;
         status = 'A_TIEMPO';
       }
-    } else if (workerId === 'W-002') {
-      // Lic. Mariana Vega - High Punctuality
+    } else if (numId === 2) {
+      // Lic. Mariana Vega
       if (d === 11) {
         status = 'JUSTIFICADO';
         checkInTime = undefined;
@@ -557,8 +557,8 @@ export const generateMonthlyStats = (workerId: string, workersList: Worker[]): W
         checkInTime = `07:${mins.toString().padStart(2, '0')}:05`;
         status = 'A_TIEMPO';
       }
-    } else if (workerId === 'W-003') {
-      // Jorge Huamán - CNC specialist: 1 justified leave, 1 tolerance tardy, 1 normal
+    } else if (numId === 3) {
+      // Jorge Huamán - CNC specialist
       if (d === 4) {
         status = 'JUSTIFICADO';
         checkInTime = undefined;
@@ -579,14 +579,14 @@ export const generateMonthlyStats = (workerId: string, workersList: Worker[]): W
         checkInTime = '07:26:30';
         status = 'A_TIEMPO';
       }
-    } else if (workerId === 'W-004') {
-      // Valeria Quispe: 1 personal permit with hours compensation
+    } else if (numId === 4) {
+      // Valeria Quispe
       if (d === 12) {
         status = 'JUSTIFICADO';
         checkInTime = '13:00:00';
         checkOutTime = '17:05:00';
         slipMotive = 'PERMISO_PERSONAL';
-        notes = 'Permiso Personal Sin Contraprestación (4 hrs). Marcado: Pendiente de compensar (PAP-2026-0039)';
+        notes = 'Permiso Personal Sin Contraprestación (4 hrs). Compensable (PAP-2026-0039)';
       } else if (d === 15) {
         status = 'TARDANZA_DESCUENTO';
         checkInTime = '07:32:10';
@@ -596,20 +596,20 @@ export const generateMonthlyStats = (workerId: string, workersList: Worker[]): W
         checkInTime = '07:21:40';
         status = 'A_TIEMPO';
       }
-    } else if (workerId === 'W-005') {
-      // Renzo Chávez: 1 past 7:35 AM with Plant Manager authorization, 1 unexcused absence
+    } else if (numId === 5) {
+      // Renzo Chávez
       if (d === 18) {
         status = 'PUERTA_CERRADA';
         checkInTime = '07:46:10';
         delayMinutes = 16;
         authorizedBy = 'JEFE_PLANTA';
         authorizationDocId = 'PAP-2026-0043';
-        notes = 'Puerta Cerrada (> 07:35 AM). Ingreso excepcional autorizado por Jefe de Planta (Ing. Carlos Mendoza)';
+        notes = 'Puerta Cerrada (> 07:35 AM). Ingreso excepcional autorizado por Jefe de Planta';
       } else if (d === 7) {
         status = 'FALTA';
         checkInTime = undefined;
         checkOutTime = undefined;
-        notes = 'Falta Injustificada (Sin registro RFID ni papeleta de tolerancia)';
+        notes = 'Falta Injustificada (Sin registro RFID)';
       } else {
         checkInTime = '07:27:00';
         status = 'A_TIEMPO';
@@ -623,7 +623,7 @@ export const generateMonthlyStats = (workerId: string, workersList: Worker[]): W
         notes = 'Falta injustificada (Sin registro en torniquete)';
       } else if (randVal < 0.22) {
         status = 'TARDANZA_DESCUENTO';
-        delayMinutes = 2 + Math.floor(randVal * 3); // 2 to 4 min delay (7:32 - 7:34)
+        delayMinutes = 2 + Math.floor(randVal * 3);
         checkInTime = `07:${(30 + delayMinutes).toString().padStart(2, '0')}:20`;
         notes = `Tardanza con descuento (+${delayMinutes} min sobre 7:30 AM)`;
       } else if (randVal < 0.32) {
@@ -676,25 +676,14 @@ export const generateMonthlyStats = (workerId: string, workersList: Worker[]): W
     });
   }
 
-  // REGLA CLAVE REQUERIMIENTO 5:
-  // "Si el trabajador tiene permiso o descanso, esos días no se contabilizan para bajar su % de Efectividad."
-  // Días evaluables netos = días transcurridos menos días justificados (permisos/descansos)
   const evaluatedElapsedWorkdays = Math.max(1, punctualDays + tardyDays + absentDays);
-  
-  // Puntuales = 100%, Tardanzas con descuento = 80% (penalización menor por tardanza leve), Faltas = 0%
   const effectivePoints = (punctualDays * 1.0) + (tardyDays * 0.80);
   const effectivenessPercentage = Math.max(0, Math.min(100, Math.round((effectivePoints / evaluatedElapsedWorkdays) * 100)));
 
-  // Cálculo de Deducciones Salariales con Reglas Requerimiento 3:
-  // 1. Tardanzas: [Sueldo / 8h / 60min] * Minutos de tardanza
-  //    (Sueldo base mensual / 30 días / 8 horas / 60 minutos) = costo por minuto
   const costPerMinute = (baseSalary / 30) / (8 * 60);
   const tardyDeduction = Math.round(totalDelayMinutes * costPerMinute * 100) / 100;
-
-  // 2. Faltas: [Sueldo / 30] por cada día de falta
   const dailyRate = baseSalary / 30;
   const absenceDeduction = Math.round(absentDays * dailyRate * 100) / 100;
-
   const salaryDeduction = Math.round(tardyDeduction + absenceDeduction);
   const calculatedSalary = Math.max(0, Math.round(baseSalary - salaryDeduction));
 
@@ -702,7 +691,7 @@ export const generateMonthlyStats = (workerId: string, workersList: Worker[]): W
   const leavesPercentageOfMonth = Math.round((leavesCount / Math.max(1, totalWorkdays)) * 100 * 10) / 10;
 
   return {
-    workerId,
+    workerId: numId,
     month: 'Septiembre 2026',
     totalWorkdays: 22,
     attendedDays,

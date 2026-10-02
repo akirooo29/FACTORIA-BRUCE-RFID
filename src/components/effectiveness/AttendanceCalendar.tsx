@@ -13,7 +13,7 @@ import {
 
 interface AttendanceCalendarProps {
   dailyLogs: DailyAttendanceSummary[];
-  monthName: string; // e.g. "Septiembre 2026"
+  monthName: string;
   workerName: string;
   baseSalary: number;
 }
@@ -25,7 +25,7 @@ export const AttendanceCalendar: React.FC<AttendanceCalendarProps> = ({
   baseSalary,
 }) => {
   const [selectedDayLog, setSelectedDayLog] = useState<DailyAttendanceSummary | null>(null);
-  const [currentMonthIndex, setCurrentMonthIndex] = useState<number>(8); // 8 = September (0-indexed)
+  const [currentMonthIndex, setCurrentMonthIndex] = useState<number>(8); // 8 = Septiembre
   const [currentYear, setCurrentYear] = useState<number>(2026);
 
   const monthNames = [
@@ -53,21 +53,15 @@ export const AttendanceCalendar: React.FC<AttendanceCalendarProps> = ({
 
   const weekDayHeaders = ['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom'];
 
-  // Days in month calculation for the grid
-  // For Sept 2026: 30 days, 1st was Tuesday (index 1 in Monday-first calendar)
-  // Let's compute offset dynamically based on currentMonthIndex and currentYear
   const firstDayOfMonth = new Date(currentYear, currentMonthIndex, 1);
   const daysInMonth = new Date(currentYear, currentMonthIndex + 1, 0).getDate();
-  // In JS getDay(): 0 is Sunday, 1 is Monday ... 6 is Saturday
-  // Converting to Monday-based (0 = Mon, ..., 6 = Sun):
   const startDayOffset = (firstDayOfMonth.getDay() + 6) % 7;
 
-  // Visual Indicator helper for day cards
   const getDayIndicator = (log?: DailyAttendanceSummary) => {
     if (!log) return null;
     if (!log.isWorkday) {
       return (
-        <span className="text-[9px] text-zinc-400 font-medium tracking-tight">
+        <span className="text-[10px] text-slate-400 font-medium">
           No lab.
         </span>
       );
@@ -76,36 +70,36 @@ export const AttendanceCalendar: React.FC<AttendanceCalendarProps> = ({
     switch (log.status) {
       case 'A_TIEMPO':
         return (
-          <span className="inline-flex items-center gap-1 text-[10px] font-bold text-zinc-900 dark:text-zinc-100 bg-zinc-100 dark:bg-zinc-800 px-1.5 py-0.5 rounded border border-zinc-300 dark:border-zinc-700">
-            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
+          <span className="inline-flex items-center gap-1 text-[10px] font-semibold text-slate-800 dark:text-slate-200 bg-slate-100 dark:bg-slate-800 px-1.5 py-0.5 rounded border border-slate-300 dark:border-slate-700">
+            <span className="w-1.5 h-1.5 rounded-full bg-emerald-600"></span>
             Normal
           </span>
         );
       case 'TARDANZA_DESCUENTO':
         return (
-          <span className="inline-flex items-center gap-1 text-[10px] font-bold text-zinc-900 dark:text-zinc-100 bg-zinc-100 dark:bg-zinc-800 px-1.5 py-0.5 rounded border border-zinc-400 dark:border-zinc-600">
+          <span className="inline-flex items-center gap-1 text-[10px] font-semibold text-amber-800 dark:text-amber-200 bg-amber-50 dark:bg-amber-950/40 px-1.5 py-0.5 rounded border border-amber-300 dark:border-amber-800">
             <span className="w-1.5 h-1.5 rounded-full bg-amber-500"></span>
-            +{log.delayMinutes}m tard.
+            +{log.delayMinutes}m
           </span>
         );
       case 'PUERTA_CERRADA':
         return (
-          <span className="inline-flex items-center gap-1 text-[10px] font-bold text-white bg-zinc-900 dark:bg-zinc-100 dark:text-zinc-900 px-1.5 py-0.5 rounded shadow-sm">
-            <span className="w-1.5 h-1.5 rounded-full bg-rose-500"></span>
+          <span className="inline-flex items-center gap-1 text-[10px] font-semibold text-rose-800 dark:text-rose-200 bg-rose-50 dark:bg-rose-950/40 px-1.5 py-0.5 rounded border border-rose-300 dark:border-rose-800">
+            <span className="w-1.5 h-1.5 rounded-full bg-rose-600"></span>
             P. Cerrada
           </span>
         );
       case 'FALTA':
         return (
-          <span className="inline-flex items-center gap-1 text-[10px] font-bold text-zinc-900 dark:text-zinc-100 bg-zinc-200 dark:bg-zinc-800 px-1.5 py-0.5 rounded border border-zinc-300 dark:border-zinc-700">
+          <span className="inline-flex items-center gap-1 text-[10px] font-semibold text-slate-800 dark:text-slate-200 bg-slate-200 dark:bg-slate-800 px-1.5 py-0.5 rounded border border-slate-300 dark:border-slate-700">
             <span className="w-1.5 h-1.5 rounded-full bg-rose-600"></span>
             Falta
           </span>
         );
       case 'JUSTIFICADO':
         return (
-          <span className="inline-flex items-center gap-1 text-[10px] font-bold text-zinc-800 dark:text-zinc-200 bg-zinc-100 dark:bg-zinc-800 px-1.5 py-0.5 rounded border border-zinc-300 dark:border-zinc-700">
-            <span className="w-1.5 h-1.5 rounded-full bg-zinc-400 dark:bg-zinc-500"></span>
+          <span className="inline-flex items-center gap-1 text-[10px] font-semibold text-slate-700 dark:text-slate-300 bg-slate-100 dark:bg-slate-800 px-1.5 py-0.5 rounded border border-slate-300 dark:border-slate-700">
+            <span className="w-1.5 h-1.5 rounded-full bg-slate-400 dark:bg-slate-500"></span>
             Permiso
           </span>
         );
@@ -115,59 +109,58 @@ export const AttendanceCalendar: React.FC<AttendanceCalendarProps> = ({
   };
 
   const getBorderColorByStatus = (status?: AttendancePunctuality, isWorkday?: boolean) => {
-    if (!isWorkday) return 'border-dashed border-zinc-200 dark:border-zinc-800 bg-zinc-50/40 dark:bg-zinc-950/40';
+    if (!isWorkday) return 'border-dashed border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-950/50';
     switch (status) {
       case 'A_TIEMPO':
-        return 'border-zinc-300 dark:border-zinc-700 hover:border-black dark:hover:border-white bg-white dark:bg-zinc-900';
+        return 'border-slate-300 dark:border-slate-700 hover:border-slate-900 dark:hover:border-slate-200 bg-white dark:bg-slate-900';
       case 'TARDANZA_DESCUENTO':
-        return 'border-zinc-400 dark:border-zinc-600 hover:border-black dark:hover:border-white bg-zinc-50 dark:bg-zinc-900';
+        return 'border-amber-300 dark:border-amber-800 hover:border-amber-500 bg-amber-50/20 dark:bg-slate-900';
       case 'PUERTA_CERRADA':
-        return 'border-zinc-900 dark:border-zinc-100 hover:ring-1 hover:ring-zinc-500 bg-zinc-100 dark:bg-zinc-800';
+        return 'border-rose-300 dark:border-rose-800 hover:border-rose-500 bg-rose-50/20 dark:bg-slate-900';
       case 'FALTA':
-        return 'border-zinc-300 dark:border-zinc-700 hover:border-zinc-500 bg-zinc-100 dark:bg-zinc-900';
+        return 'border-slate-300 dark:border-slate-700 hover:border-slate-500 bg-slate-100 dark:bg-slate-900';
       case 'JUSTIFICADO':
-        return 'border-zinc-300 dark:border-zinc-700 hover:border-black dark:hover:border-white bg-zinc-50 dark:bg-zinc-900';
+        return 'border-slate-300 dark:border-slate-700 hover:border-slate-900 dark:hover:border-slate-100 bg-slate-50 dark:bg-slate-900';
       default:
-        return 'border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900';
+        return 'border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900';
     }
   };
 
-  // Minute deduction calculation: [Sueldo / 8h / 60min]
   const costPerMinute = (baseSalary / 30) / (8 * 60);
 
   return (
-    <div className="p-6 rounded-3xl bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 shadow-sm space-y-5 transition-colors">
+    <div className="p-6 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 space-y-5">
       {/* Calendar Header with Month Navigation */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-zinc-200 dark:border-zinc-800">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-slate-200 dark:border-slate-800">
         <div>
-          <h3 className="text-sm font-bold text-zinc-900 dark:text-white uppercase tracking-wider flex items-center gap-2">
-            <Calendar className="w-4 h-4 text-zinc-500" />
-            Calendario Mensual Interactivo de Asistencia
+          <h3 className="text-sm font-bold text-slate-900 dark:text-white uppercase tracking-wider flex items-center gap-2">
+            <Calendar className="w-4 h-4 text-slate-500" />
+            Calendario Mensual de Asistencia
           </h3>
-          <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-0.5">
+          <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
             Inspección día a día con indicadores de Asistencia Normal, Tardanzas, Faltas y Permisos.
           </p>
         </div>
 
-        {/* Month Selector Controls */}
-        <div className="flex items-center gap-2 bg-zinc-50 dark:bg-zinc-950 p-1.5 rounded-2xl border border-zinc-300 dark:border-zinc-700 shadow-inner">
+        {/* Controles de Navegación de Mes */}
+        <div className="flex items-center gap-1.5 bg-slate-50 dark:bg-slate-950 p-1 rounded-lg border border-slate-300 dark:border-slate-700">
           <button
             type="button"
             onClick={handlePrevMonth}
-            className="p-1.5 rounded-xl text-zinc-600 dark:text-zinc-300 hover:bg-white dark:hover:bg-zinc-800 hover:text-zinc-900 dark:hover:text-white border border-transparent hover:border-zinc-200 dark:hover:border-zinc-700 transition-all active:scale-95"
+            className="p-1 rounded-md text-slate-600 dark:text-slate-300 hover:bg-white dark:hover:bg-slate-800 hover:text-slate-900 dark:hover:text-white transition-colors cursor-pointer"
             title="Mes anterior"
           >
             <ChevronLeft className="w-4 h-4" />
           </button>
 
-          <span className="px-3 text-xs font-bold text-zinc-900 dark:text-zinc-100 min-w-[130px] text-center font-mono tracking-wide">
+          <span className="px-2 text-xs font-semibold text-slate-900 dark:text-slate-100 min-w-[120px] text-center font-mono">
             {monthNames[currentMonthIndex]} {currentYear}
           </span>
 
           <button
             type="button"
             onClick={handleNextMonth}
-            className="p-1.5 rounded-xl text-zinc-600 dark:text-zinc-300 hover:bg-white dark:hover:bg-zinc-800 hover:text-zinc-900 dark:hover:text-white border border-transparent hover:border-zinc-200 dark:hover:border-zinc-700 transition-all active:scale-95"
+            className="p-1 rounded-md text-slate-600 dark:text-slate-300 hover:bg-white dark:hover:bg-slate-800 hover:text-slate-900 dark:hover:text-white transition-colors cursor-pointer"
             title="Mes siguiente"
           >
             <ChevronRight className="w-4 h-4" />
@@ -175,33 +168,33 @@ export const AttendanceCalendar: React.FC<AttendanceCalendarProps> = ({
         </div>
       </div>
 
-      {/* Legend Bar (Reglas Visuales Claras) */}
-      <div className="flex flex-wrap items-center gap-2 sm:gap-4 p-3 rounded-2xl bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 text-[11px] text-zinc-600 dark:text-zinc-300">
-        <span className="font-bold text-zinc-900 dark:text-white uppercase tracking-wider text-[10px] mr-1">
+      {/* Barra de Leyenda */}
+      <div className="flex flex-wrap items-center gap-3 sm:gap-4 p-3 rounded-lg bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 text-xs text-slate-600 dark:text-slate-300">
+        <span className="font-bold text-slate-900 dark:text-white uppercase tracking-wider text-[10px] mr-1">
           Leyenda:
         </span>
         <div className="flex items-center gap-1.5">
-          <span className="w-2 h-2 rounded-full bg-emerald-500"></span>
+          <span className="w-2 h-2 rounded-full bg-emerald-600"></span>
           <span>A tiempo (≤ 07:30)</span>
         </div>
         <div className="flex items-center gap-1.5">
           <span className="w-2 h-2 rounded-full bg-amber-500"></span>
-          <span>Tardanza con descuento (07:30 - 07:35)</span>
+          <span>Tardanza (07:30 - 07:35)</span>
         </div>
         <div className="flex items-center gap-1.5">
-          <span className="w-2 h-2 rounded-full bg-rose-500"></span>
+          <span className="w-2 h-2 rounded-full bg-rose-600"></span>
           <span>Puerta Cerrada / Falta (&gt; 07:35)</span>
         </div>
         <div className="flex items-center gap-1.5">
-          <span className="w-2 h-2 rounded-full bg-zinc-400"></span>
-          <span>Permiso / Descanso (No reduce efectividad)</span>
+          <span className="w-2 h-2 rounded-full bg-slate-400"></span>
+          <span>Permiso (No penalizado)</span>
         </div>
       </div>
 
-      {/* Calendar Grid */}
+      {/* Grid del Calendario */}
       <div>
-        {/* Days of Week Headers */}
-        <div className="grid grid-cols-7 gap-2 mb-2 text-center text-xs font-bold uppercase tracking-wider text-zinc-400">
+        {/* Cabecera de días de la semana */}
+        <div className="grid grid-cols-7 gap-2 mb-2 text-center text-xs font-bold uppercase tracking-wider text-slate-400">
           {weekDayHeaders.map((day) => (
             <div key={day} className="py-1">
               {day}
@@ -209,20 +202,17 @@ export const AttendanceCalendar: React.FC<AttendanceCalendarProps> = ({
           ))}
         </div>
 
-        {/* Days Grid Cells */}
+        {/* Celdas de los días */}
         <div className="grid grid-cols-7 gap-2">
-          {/* Empty offset padding for days before the 1st */}
           {Array.from({ length: startDayOffset }).map((_, i) => (
             <div
               key={`empty-${i}`}
-              className="h-24 sm:h-28 rounded-2xl bg-zinc-50/20 dark:bg-zinc-950/20 border border-zinc-100 dark:border-zinc-900/40 opacity-30"
+              className="h-24 sm:h-26 rounded-lg bg-slate-50/30 dark:bg-slate-950/30 border border-slate-100 dark:border-slate-900 opacity-40"
             />
           ))}
 
-          {/* Month Days */}
           {Array.from({ length: daysInMonth }).map((_, i) => {
             const dayNum = i + 1;
-            // Match with dailyLogs if in current demo month (September 2026)
             const log = currentMonthIndex === 8 && currentYear === 2026
               ? dailyLogs.find((l) => l.dayNumber === dayNum)
               : undefined;
@@ -236,45 +226,45 @@ export const AttendanceCalendar: React.FC<AttendanceCalendarProps> = ({
                 onClick={() => {
                   if (log) setSelectedDayLog(log);
                 }}
-                className={`group relative h-24 sm:h-28 p-2 rounded-2xl border transition-all duration-150 flex flex-col justify-between cursor-pointer select-none ${getBorderColorByStatus(
+                className={`group relative h-24 sm:h-26 p-2 rounded-lg border transition-colors flex flex-col justify-between cursor-pointer select-none ${getBorderColorByStatus(
                   log?.status,
                   isWorkday
                 )} ${
-                  log?.isWorkday ? 'hover:scale-[1.02] hover:shadow-md' : 'opacity-60'
+                  log?.isWorkday ? 'hover:bg-slate-50/80 dark:hover:bg-slate-800/80' : 'opacity-60'
                 }`}
               >
-                {/* Day Header */}
+                {/* Cabecera del día */}
                 <div className="flex items-center justify-between">
                   <span
-                    className={`font-mono text-xs font-bold w-6 h-6 flex items-center justify-center rounded-lg ${
+                    className={`font-mono text-xs font-semibold w-5 h-5 flex items-center justify-center rounded ${
                       dayNum === 18 && currentMonthIndex === 8 && currentYear === 2026
-                        ? 'bg-black text-white dark:bg-white dark:text-black font-black'
-                        : 'text-zinc-700 dark:text-zinc-300'
+                        ? 'bg-slate-900 text-white dark:bg-white dark:text-slate-900 font-bold'
+                        : 'text-slate-700 dark:text-slate-300'
                     }`}
                   >
                     {dayNum}
                   </span>
 
                   {log?.checkInTime && (
-                    <span className="font-mono text-[9px] text-zinc-500 font-semibold hidden sm:inline">
+                    <span className="font-mono text-[9px] text-slate-500 font-medium hidden sm:inline">
                       {log.checkInTime.slice(0, 5)}
                     </span>
                   )}
                 </div>
 
-                {/* Day Center / Status Badge */}
+                {/* Badge central */}
                 <div className="my-1">
                   {getDayIndicator(log)}
                 </div>
 
-                {/* Day Footer / Note snippet */}
-                <div className="text-[10px] text-zinc-400 truncate">
+                {/* Pie del día */}
+                <div className="text-[10px] text-slate-400 truncate">
                   {log?.slipMotive ? (
-                    <span className="font-semibold text-zinc-700 dark:text-zinc-300">
+                    <span className="font-medium text-slate-700 dark:text-slate-300">
                       {log.slipMotive.replace('_', ' ')}
                     </span>
                   ) : log?.checkOutTime ? (
-                    <span className="font-mono text-zinc-400">Sal: {log.checkOutTime.slice(0, 5)}</span>
+                    <span className="font-mono text-slate-400">Sal: {log.checkOutTime.slice(0, 5)}</span>
                   ) : (
                     <span>--</span>
                   )}
@@ -285,64 +275,62 @@ export const AttendanceCalendar: React.FC<AttendanceCalendarProps> = ({
         </div>
       </div>
 
-      {/* DAY DETAIL INSPECTOR MODAL */}
+      {/* Modal de Inspección del Día */}
       {selectedDayLog && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-fadeIn">
-          <div className="relative w-full max-w-lg bg-white dark:bg-zinc-900 border border-zinc-300 dark:border-zinc-800 rounded-3xl shadow-2xl p-6 text-zinc-900 dark:text-zinc-100 overflow-hidden">
-            {/* Modal Header */}
-            <div className="flex items-start justify-between pb-4 border-b border-zinc-200 dark:border-zinc-800">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60">
+          <div className="relative w-full max-w-lg bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-6 text-slate-900 dark:text-slate-100 overflow-hidden">
+            {/* Header del Modal */}
+            <div className="flex items-start justify-between pb-4 border-b border-slate-200 dark:border-slate-800">
               <div className="flex items-center gap-3">
-                <div className="p-3 rounded-2xl bg-zinc-100 dark:bg-zinc-800 text-zinc-900 dark:text-white border border-zinc-200 dark:border-zinc-700">
+                <div className="p-2 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-900 dark:text-white border border-slate-200 dark:border-slate-700">
                   <Clock className="w-5 h-5" />
                 </div>
                 <div>
-                  <h4 className="text-base font-bold text-zinc-900 dark:text-white">
+                  <h4 className="text-base font-bold text-slate-900 dark:text-white">
                     Ficha de Jornada: {selectedDayLog.dayName} {selectedDayLog.dayNumber} de {monthName}
                   </h4>
-                  <p className="text-xs text-zinc-500">{workerName} • Registro de Entrada y Salida</p>
+                  <p className="text-xs text-slate-500">{workerName} • Registro de Entrada y Salida</p>
                 </div>
               </div>
 
               <button
                 type="button"
                 onClick={() => setSelectedDayLog(null)}
-                className="p-1.5 text-zinc-400 hover:text-zinc-900 dark:hover:text-white hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-lg transition-colors"
+                className="p-1 text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 rounded-lg transition-colors cursor-pointer"
               >
                 <X className="w-5 h-5" />
               </button>
             </div>
 
-            {/* Modal Body */}
+            {/* Cuerpo del Modal */}
             <div className="py-4 space-y-4 text-xs">
-              {/* Status Header Pill */}
-              <div className="flex items-center justify-between p-3 rounded-2xl bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800">
-                <span className="font-bold text-zinc-700 dark:text-zinc-300">Estado de la Marcación:</span>
+              <div className="flex items-center justify-between p-3 rounded-lg bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800">
+                <span className="font-semibold text-slate-700 dark:text-slate-300">Estado de la Marcación:</span>
                 <Badge value={selectedDayLog.status} size="md" />
               </div>
 
-              {/* Attendance Details Grid */}
-              <div className="grid grid-cols-2 gap-3 p-4 rounded-2xl bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800">
+              <div className="grid grid-cols-2 gap-3 p-3.5 rounded-lg bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800">
                 <div>
-                  <span className="text-[10px] text-zinc-500 block">Hora de Entrada Registrada:</span>
-                  <span className="font-mono text-sm font-black text-zinc-900 dark:text-white">
+                  <span className="text-[10px] text-slate-500 block">Hora de Entrada:</span>
+                  <span className="font-mono text-sm font-bold text-slate-900 dark:text-white">
                     {selectedDayLog.checkInTime ? `${selectedDayLog.checkInTime} AM` : 'Sin Marcación'}
                   </span>
                 </div>
                 <div>
-                  <span className="text-[10px] text-zinc-500 block">Hora de Salida Registrada:</span>
-                  <span className="font-mono text-sm font-black text-zinc-900 dark:text-white">
+                  <span className="text-[10px] text-slate-500 block">Hora de Salida:</span>
+                  <span className="font-mono text-sm font-bold text-slate-900 dark:text-white">
                     {selectedDayLog.checkOutTime ? `${selectedDayLog.checkOutTime} PM` : 'Sin Registro'}
                   </span>
                 </div>
                 <div>
-                  <span className="text-[10px] text-zinc-500 block">Minutos de Tardanza Computable:</span>
-                  <span className="font-mono font-bold text-zinc-900 dark:text-white">
+                  <span className="text-[10px] text-slate-500 block">Minutos Tardanza:</span>
+                  <span className="font-mono font-bold text-slate-900 dark:text-white">
                     {selectedDayLog.delayMinutes > 0 ? `+${selectedDayLog.delayMinutes} minutos` : '0 min (Puntual)'}
                   </span>
                 </div>
                 <div>
-                  <span className="text-[10px] text-zinc-500 block">Impacto en Liquidación:</span>
-                  <span className="font-mono font-bold text-zinc-900 dark:text-white">
+                  <span className="text-[10px] text-slate-500 block">Impacto en Liquidación:</span>
+                  <span className="font-mono font-bold text-slate-900 dark:text-white">
                     {selectedDayLog.delayMinutes > 0
                       ? `- S/ ${(selectedDayLog.delayMinutes * costPerMinute).toFixed(2)}`
                       : selectedDayLog.status === 'FALTA'
@@ -352,51 +340,48 @@ export const AttendanceCalendar: React.FC<AttendanceCalendarProps> = ({
                 </div>
               </div>
 
-              {/* Authorization if Past 07:35 AM */}
               {selectedDayLog.authorizedBy && (
-                <div className="p-3.5 rounded-2xl bg-zinc-100 dark:bg-zinc-800 border border-zinc-300 dark:border-zinc-700 space-y-1">
-                  <div className="flex items-center gap-1.5 text-zinc-900 dark:text-white font-bold text-xs">
-                    <ShieldCheck className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
+                <div className="p-3 rounded-lg bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 space-y-1">
+                  <div className="flex items-center gap-1.5 text-slate-900 dark:text-white font-bold text-xs">
+                    <ShieldCheck className="w-4 h-4 text-emerald-600" />
                     <span>Autorización de Ingreso Fuera de Tolerancia</span>
                   </div>
-                  <p className="text-[11px] text-zinc-600 dark:text-zinc-300">
+                  <p className="text-xs text-slate-600 dark:text-slate-300">
                     Aprobado formalmente por: <strong>{selectedDayLog.authorizedBy === 'JEFE_PLANTA' ? 'Jefe de Planta (Ing. Carlos Mendoza)' : 'Gerencia General'}</strong>
                   </p>
                   {selectedDayLog.authorizationDocId && (
-                    <span className="inline-block text-[10px] font-mono bg-white dark:bg-zinc-900 px-2 py-0.5 rounded border border-zinc-300 dark:border-zinc-700">
+                    <span className="inline-block text-[10px] font-mono bg-white dark:bg-slate-900 px-2 py-0.5 rounded border border-slate-200 dark:border-slate-700">
                       Doc. Ref: {selectedDayLog.authorizationDocId}
                     </span>
                   )}
                 </div>
               )}
 
-              {/* Justification & Notes */}
-              <div className="p-3 rounded-2xl bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 space-y-1">
-                <span className="text-[10px] font-bold text-zinc-500 uppercase tracking-wider block">
+              <div className="p-3 rounded-lg bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 space-y-1">
+                <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider block">
                   Observación de Recursos Humanos:
                 </span>
-                <p className="text-xs text-zinc-700 dark:text-zinc-300 leading-relaxed">
+                <p className="text-xs text-slate-700 dark:text-slate-300 leading-relaxed">
                   {selectedDayLog.notes || 'Jornada laboral ordinaria cumplida conforme a turno.'}
                 </p>
               </div>
 
-              {/* Rule Note */}
               {selectedDayLog.status === 'JUSTIFICADO' && (
-                <div className="p-3 rounded-xl bg-zinc-100 dark:bg-zinc-800/80 border border-zinc-200 dark:border-zinc-700 text-[11px] text-zinc-600 dark:text-zinc-300 flex items-center gap-2">
-                  <CheckCircle2 className="w-4 h-4 text-zinc-900 dark:text-white shrink-0" />
+                <div className="p-3 rounded-lg bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-xs text-slate-600 dark:text-slate-300 flex items-center gap-2">
+                  <CheckCircle2 className="w-4 h-4 text-slate-900 dark:text-white shrink-0" />
                   <span>
-                    <strong>Protección Salarial:</strong> Por contar con papeleta o descanso médico justificado, este día <strong>no reduce el % de efectividad mensual</strong> del trabajador.
+                    <strong>Protección Salarial:</strong> Con papeleta o descanso médico justificado, este día <strong>no reduce el % de efectividad</strong>.
                   </span>
                 </div>
               )}
             </div>
 
-            {/* Modal Footer */}
-            <div className="flex items-center justify-end pt-3 border-t border-zinc-200 dark:border-zinc-800">
+            {/* Footer del Modal */}
+            <div className="flex items-center justify-end pt-3 border-t border-slate-200 dark:border-slate-800">
               <button
                 type="button"
                 onClick={() => setSelectedDayLog(null)}
-                className="px-4 py-2 bg-black hover:bg-zinc-800 text-white dark:bg-white dark:hover:bg-zinc-200 dark:text-black font-bold text-xs rounded-xl transition-all"
+                className="px-4 py-2 bg-slate-900 hover:bg-slate-800 text-white dark:bg-white dark:hover:bg-slate-100 dark:text-slate-900 font-semibold text-xs rounded-lg transition-colors cursor-pointer"
               >
                 Cerrar Detalle
               </button>
