@@ -1,4 +1,14 @@
-export type WorkerType = 'EMPLEADO_INTERNO' | 'CONTRATISTA';
+export type WorkerType = 'TRABAJADOR_REGULAR' | 'CONTRATISTA' | 'PRACTICANTE' | 'EMPLEADO_INTERNO';
+
+export type AdminRole = 'GERENCIA' | 'RRHH';
+
+export interface AdminUser {
+  email: string;
+  name: string;
+  role: AdminRole;
+  title: string;
+  department: string;
+}
 
 export type WorkerStatus = 'ACTIVO' | 'INACTIVO' | 'EN_OBSERVACION';
 
@@ -9,16 +19,19 @@ export type ScanStatus = 'AUTORIZADO' | 'DENEGADO' | 'FUERA_DE_TURNO' | 'NO_REGI
 // Attendance rules:
 // - A_TIEMPO: ≤ 07:30:00 AM
 // - TARDANZA_DESCUENTO: 07:30:01 AM a 07:35:00 AM (Permite ingreso, se descuenta en base a [Sueldo / 8h / 60min])
-// - PUERTA_CERRADA: > 07:35:00 AM (Falta por defecto; ingreso requiere Autorización de Ingreso Fuera de Tolerancia por Jefe de Planta o Gerente General)
-// - JUSTIFICADO: Día con permiso, comisión, descanso médico o vacación (no reduce efectividad)
+// - PUERTA_CERRADA: > 07:35:00 AM (Falta por defecto; ingreso requiere Autorización de Ingreso Fuera de Tolerancia)
+// - FALTA: Inasistencia injustificada sin registro
+// - JUSTIFICADO: Día con permiso particular, comisión o descanso médico
+// - VACACIONES: Período vacacional anual legal aprobado
 export type AttendancePunctuality =
   | 'A_TIEMPO'
   | 'TARDANZA_DESCUENTO'
   | 'PUERTA_CERRADA'
   | 'FALTA'
-  | 'JUSTIFICADO';
+  | 'JUSTIFICADO'
+  | 'VACACIONES';
 
-export type ThemeMode = 'light' | 'dark';
+export type ThemeMode = 'light';
 
 // 10 Motivos normativos exactos de Papeletas Oficiales
 export type PaperSlipMotive =
@@ -33,6 +46,16 @@ export type PaperSlipMotive =
   | 'INGRESO_FUERA_TOLERANCIA'
   | 'COMPENSACION_HORAS';
 
+export type WeekDay = 'Lunes' | 'Martes' | 'Miércoles' | 'Jueves' | 'Viernes' | 'Sábado';
+
+export interface DaySchedule {
+  enabled: boolean;
+  startTime: string; // ej. "08:00"
+  endTime: string;   // ej. "14:00"
+}
+
+export type CustomSchedule = Record<WeekDay, DaySchedule>;
+
 export interface Worker {
   id: number;
   code: string;
@@ -46,11 +69,17 @@ export interface Worker {
   rfidTag: string;
   status: WorkerStatus;
   avatarUrl: string;
-  baseSalary?: number;
-  // Specific fields for internal employees (Regla 365 días)
+  baseSalary?: number; // Sueldo Base opcional (oculto por defecto para cálculos de BI)
+  
+  // Configuración de Horario
+  scheduleType?: 'ESTANDAR' | 'PERSONALIZADO';
+  customSchedule?: CustomSchedule; // Usado cuando type === 'PRACTICANTE'
+  
+  // Specific fields for internal / regular employees (Regla 365 días)
   fecha_ingreso: string; // YYYY-MM-DD
   hireDate?: string;     // alias retrocompatible
   vacationDaysAvailable?: number;
+  
   // Specific fields for contractors
   contractorCompany?: string;
   contractExpiry?: string;
@@ -108,6 +137,7 @@ export interface WorkerMonthlyStats {
   tardyDays: number; // 07:30:01 a 07:35:00
   absentDays: number; // Injustificadas o > 07:35 sin autorización
   justifiedDays: number; // Permisos, descansos, comisiones (no reducen efectividad)
+  vacationDays: number; // Días de vacaciones aprobadas (no reducen efectividad)
   totalDelayMinutes: number;
   leavesCount: number; // Cantidad de permisos tomados
   leavesPercentageOfMonth: number; // % del mes que representan los permisos
@@ -181,4 +211,33 @@ export interface RequestItem {
   status: 'APROBADO' | 'PENDIENTE' | 'RECHAZADO';
   submittedDate: string;
   documentUrl?: string;
+}
+
+// Business Intelligence Models
+export interface DepartmentIncidence {
+  department: string;
+  attendances: number;
+  tardiness: number;
+  absences: number;
+  justified: number;
+  totalWorkers: number;
+  totalDelayMinutes: number;
+  economicDeductionImpact: number;
+  punctualityRate: number;
+}
+
+export interface MonthlyPunctualitySummary {
+  onTimeRate: number;      // % A tiempo (≤ 07:30)
+  tardyRate: number;       // % Tardanza tolerada (07:30 - 07:35)
+  closedDoorRate: number;  // % Puerta cerrada / Falta (> 07:35)
+  justifiedRate: number;   // % Justificados / Permisos
+  totalEvaluations: number;
+}
+
+export interface MonthlyEconomicImpact {
+  totalEstimatedDeduction: number; // S/. acumulado del mes
+  totalDelayMinutes: number;       // Minutos totales de tardanza
+  tardinessImpactCost: number;     // S/. por tardanza
+  absenteeismImpactCost: number;   // S/. por inasistencia
+  costPerMinuteAverage: number;    // Promedio de S/. / minuto
 }

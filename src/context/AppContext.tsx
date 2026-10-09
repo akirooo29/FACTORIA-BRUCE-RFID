@@ -4,6 +4,8 @@ import type {
   AttendanceRecord,
   RequestItem,
   WorkerType,
+  AdminRole,
+  AdminUser,
   ScanType,
   ScanStatus,
   AttendancePunctuality,
@@ -18,6 +20,7 @@ import {
   INITIAL_REQUESTS,
   INITIAL_PAPER_SLIPS,
   INITIAL_VACATION_NOTIFICATIONS,
+  ADMIN_USERS,
   generateMonthlyStats,
 } from '../data/mockData';
 import { personnelService } from '../services/personnelService';
@@ -33,14 +36,20 @@ interface ScanResult {
 }
 
 interface AppContextType {
-  // Autenticación & Flujo de Entrada
+  // Autenticación Administrativa & Perfiles
   isAuthenticated: boolean;
   currentUser: string | null;
-  login: (username: string) => void;
+  adminRole: AdminRole;
+  activeAdminUser: AdminUser;
+  login: (email: string, role?: AdminRole) => void;
   logout: () => void;
+  setAdminRole: (role: AdminRole) => void;
 
+  // Visual Theme (Strictly Light / White)
   theme: ThemeMode;
   toggleTheme: () => void;
+
+  // Datos del Sistema
   workers: Worker[];
   attendanceLogs: AttendanceRecord[];
   requests: RequestItem[];
@@ -48,15 +57,19 @@ interface AppContextType {
   addPaperSlip: (slip: Omit<PaperSlipRecord, 'id' | 'folioNumber' | 'submittedDate'>) => PaperSlipRecord;
   vacationNotifications: VacationNotification[];
   markNotificationRead: (id: string) => void;
-  activeUserRole: WorkerType;
-  setActiveUserRole: (role: WorkerType) => void;
+
+  // Navegación & Control de Vistas
   currentView: string;
   setCurrentView: (view: string) => void;
   activeTerminal: string;
   setActiveTerminal: (term: string) => void;
   processRfidScan: (rfidTag: string, scanTypeOverride?: ScanType) => ScanResult;
+
+  // Retrocompatibilidad
+  activeUserRole: WorkerType;
+  setActiveUserRole: (role: WorkerType) => void;
   
-  // Operaciones CRUD preparadas para Backend API (C# ASP.NET / Node.js + SQL Server)
+  // Operaciones CRUD de Personal
   addWorker: (worker: Omit<Worker, 'id'>) => Promise<Worker>;
   updateWorker: (id: number, data: Partial<Worker>) => Promise<Worker>;
   deleteWorker: (id: number) => Promise<boolean>;
@@ -80,63 +93,98 @@ interface AppContextType {
 const AppContext = createContext<AppContextType | undefined>(undefined);
 
 export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  // Estado de Autenticación (Inicia false para respetar el flujo Splash -> Login)
+  // Estado de Autenticación
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(() => {
     return localStorage.getItem('fb_rfid_auth') === 'true';
   });
+
   const [currentUser, setCurrentUser] = useState<string | null>(() => {
-    return localStorage.getItem('fb_rfid_user') || null;
+    return localStorage.getItem('fb_rfid_user') || 'rrhh@grupobruce.com';
   });
 
-  // Theme state: Default 'light'
-  const [theme, setTheme] = useState<ThemeMode>(() => {
-    const saved = localStorage.getItem('fb_rfid_theme');
-    return saved === 'dark' ? 'dark' : 'light';
+  const [adminRole, setAdminRoleState] = useState<AdminRole>(() => {
+    const savedRole = localStorage.getItem('fb_rfid_role');
+    if (savedRole === 'GERENCIA' || savedRole === 'RRHH') return savedRole;
+    const user = localStorage.getItem('fb_rfid_user');
+    return user === 'cpunlay@grupobruce.com' ? 'GERENCIA' : 'RRHH';
   });
+
+  // Tema Estrictamente Blanco / Claro (Obligatorio)
+  const theme: ThemeMode = 'light';
+
+  useEffect(() => {
+    // Forzar siempre modo claro y fondo blanco
+    const root = document.documentElement;
+    root.classList.remove('dark');
+    localStorage.removeItem('fb_rfid_theme');
+  }, []);
+
+  const toggleTheme = () => {
+    // Modo oscuro eliminado por requerimiento empresarial
+  };
 
   const [workers, setWorkers] = useState<Worker[]>(INITIAL_WORKERS);
   const [attendanceLogs, setAttendanceLogs] = useState<AttendanceRecord[]>(INITIAL_ATTENDANCE);
   const [requests, setRequests] = useState<RequestItem[]>(INITIAL_REQUESTS);
   const [paperSlips, setPaperSlips] = useState<PaperSlipRecord[]>(INITIAL_PAPER_SLIPS);
   const [vacationNotifications, setVacationNotifications] = useState<VacationNotification[]>(INITIAL_VACATION_NOTIFICATIONS);
-  
-  // Active session perspective: Internal Employee vs Contractor
-  const [activeUserRole, setActiveUserRole] = useState<WorkerType>('EMPLEADO_INTERNO');
-  
-  const [currentView, setCurrentView] = useState<string>('dashboard');
-  const [activeTerminal, setActiveTerminal] = useState<string>('TRM-01 (Puerta Principal - Torniquete A)');
+
+  // Vista activa inicial según el perfil
+  const [currentView, setCurrentView] = useState<string>(() => {
+    const savedRole = localStorage.getItem('fb_rfid_role');
+    return savedRole === 'GERENCIA' ? 'dashboard_bi' : 'dashboard';
+  });
+
+  const [activeTerminal, setActiveTerminal] = useState<string>('Entrada Principal (Torniquete 1)');
   const [sidebarCollapsed, setSidebarCollapsed] = useState<boolean>(false);
   const [isAntennaConnected, setIsAntennaConnected] = useState<boolean>(true);
   const [lastScanResult, setLastScanResult] = useState<ScanResult | null>(null);
 
-  // Selected worker for individual effectiveness dashboard (ID 1: Ing. Carlos Mendoza)
+  // Trabajador seleccionado para dashboard de efectividad
   const [selectedWorkerForStats, setSelectedWorkerForStats] = useState<number>(1);
 
-  // Modal alert when contractor tries to access restricted internal benefits
   const [activeContractorWarningModal, setActiveContractorWarningModal] = useState<boolean>(false);
   const [attemptedRestrictedSection, setAttemptedRestrictedSection] = useState<string | null>(null);
 
-  // Sync theme with HTML document class
-  useEffect(() => {
-    const root = document.documentElement;
-    if (theme === 'dark') {
-      root.classList.add('dark');
-    } else {
-      root.classList.remove('dark');
-    }
-    localStorage.setItem('fb_rfid_theme', theme);
-  }, [theme]);
+  // Rol activo (compatibilidad)
+  const [activeUserRole, setActiveUserRole] = useState<WorkerType>('TRABAJADOR_REGULAR');
 
-  const toggleTheme = () => {
-    setTheme((prev) => (prev === 'light' ? 'dark' : 'light'));
+  const activeAdminUser: AdminUser =
+    (currentUser && ADMIN_USERS[currentUser]) ||
+    (adminRole === 'GERENCIA' ? ADMIN_USERS['cpunlay@grupobruce.com'] : ADMIN_USERS['rrhh@grupobruce.com']);
+
+  const setAdminRole = (role: AdminRole) => {
+    setAdminRoleState(role);
+    localStorage.setItem('fb_rfid_role', role);
+    if (role === 'GERENCIA') {
+      setCurrentUser('cpunlay@grupobruce.com');
+      localStorage.setItem('fb_rfid_user', 'cpunlay@grupobruce.com');
+      setCurrentView('dashboard_bi');
+    } else {
+      setCurrentUser('rrhh@grupobruce.com');
+      localStorage.setItem('fb_rfid_user', 'rrhh@grupobruce.com');
+      setCurrentView('dashboard');
+    }
   };
 
-  const login = (username: string) => {
+  const login = (email: string, explicitRole?: AdminRole) => {
+    const cleanEmail = email.trim().toLowerCase();
+    const resolvedRole: AdminRole =
+      explicitRole || (cleanEmail === 'cpunlay@grupobruce.com' ? 'GERENCIA' : 'RRHH');
+
     setIsAuthenticated(true);
-    setCurrentUser(username);
+    setCurrentUser(cleanEmail);
+    setAdminRoleState(resolvedRole);
+
     localStorage.setItem('fb_rfid_auth', 'true');
-    localStorage.setItem('fb_rfid_user', username);
-    setCurrentView('dashboard');
+    localStorage.setItem('fb_rfid_user', cleanEmail);
+    localStorage.setItem('fb_rfid_role', resolvedRole);
+
+    if (resolvedRole === 'GERENCIA') {
+      setCurrentView('dashboard_bi');
+    } else {
+      setCurrentView('dashboard');
+    }
   };
 
   const logout = () => {
@@ -144,6 +192,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     setCurrentUser(null);
     localStorage.removeItem('fb_rfid_auth');
     localStorage.removeItem('fb_rfid_user');
+    localStorage.removeItem('fb_rfid_role');
   };
 
   const clearLastScan = () => setLastScanResult(null);
@@ -161,7 +210,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       return res;
     }
 
-    // Search worker by RFID tag, Code, or DNI
+    // Buscar trabajador por RFID, Código o DNI
     const foundWorker = workers.find(
       (w: Worker) =>
         w.rfidTag.toLowerCase() === cleanTag.toLowerCase() ||
@@ -196,11 +245,10 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       return res;
     }
 
-    // Automatic toggle or override for scan type
     const lastWorkerLog = attendanceLogs.find((log: AttendanceRecord) => log.workerId === foundWorker.id);
     const scanType: ScanType = scanTypeOverride || (lastWorkerLog && lastWorkerLog.scanType === 'ENTRADA' ? 'SALIDA' : 'ENTRADA');
 
-    // Calculate Punctuality for ENTRADA based on 7:30 AM / 7:35 AM rules:
+    // Regla de puntualidad y tolerancia: Entrada ≤ 07:30 AM / Tolerancia hasta 07:35 AM
     const currentHours = now.getHours();
     const currentMinutes = now.getMinutes();
     const currentTotalMinutes = currentHours * 60 + currentMinutes;
@@ -275,9 +323,6 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     return result;
   };
 
-  /**
-   * Operaciones CRUD con arquitectura lista para Backend API
-   */
   const addWorker = async (workerData: Omit<Worker, 'id'>): Promise<Worker> => {
     const created = await personnelService.create(workerData);
     setWorkers((prev) => [created, ...prev]);
@@ -294,7 +339,6 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     const success = await personnelService.delete(id);
     if (success) {
       setWorkers((prev) => prev.filter((w) => w.id !== id));
-      // Si el trabajador seleccionado para estadísticas fue eliminado, apuntar al primero disponible
       if (selectedWorkerForStats === id) {
         const remaining = workers.filter((w) => w.id !== id);
         if (remaining.length > 0) {
@@ -344,8 +388,11 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       value={{
         isAuthenticated,
         currentUser,
+        adminRole,
+        activeAdminUser,
         login,
         logout,
+        setAdminRole,
         theme,
         toggleTheme,
         workers,
@@ -355,13 +402,13 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         addPaperSlip,
         vacationNotifications,
         markNotificationRead,
-        activeUserRole,
-        setActiveUserRole,
         currentView,
         setCurrentView,
         activeTerminal,
         setActiveTerminal,
         processRfidScan,
+        activeUserRole,
+        setActiveUserRole,
         addWorker,
         updateWorker,
         deleteWorker,

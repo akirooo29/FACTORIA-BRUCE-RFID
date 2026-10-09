@@ -10,10 +10,6 @@
     border-color: #e2e8f0; /* slate-200 */
   }
 
-  .dark * {
-    border-color: #1e293b; /* slate-800 */
-  }
-
   body {
     font-family: var(--font-sans);
     background-color: #f8fafc; /* slate-50 */
@@ -37,10 +33,6 @@
 ::-webkit-scrollbar-thumb {
   background: #cbd5e1; /* slate-300 */
   border-radius: 4px;
-}
-
-.dark ::-webkit-scrollbar-thumb {
-  background: #334155; /* slate-700 */
 }
 
 ::-webkit-scrollbar-thumb:hover {

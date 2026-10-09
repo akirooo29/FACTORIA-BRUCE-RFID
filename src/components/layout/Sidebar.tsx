@@ -5,121 +5,138 @@ import {
   Clock,
   Users,
   FileText,
-  CalendarDays,
-  FileHeart,
-  FileSpreadsheet,
-  Lock,
   ChevronLeft,
   ChevronRight,
   Building,
-  UserCheck,
-  HardHat,
+  BarChart3,
+  TrendingDown,
+  DollarSign,
   Gauge,
-  Radio,
+  Calculator,
+  ShieldCheck,
 } from 'lucide-react';
 
 export const Sidebar: React.FC = () => {
   const {
     currentView,
     setCurrentView,
-    activeUserRole,
+    adminRole,
     sidebarCollapsed,
     setSidebarCollapsed,
-    setActiveContractorWarningModal,
-    setAttemptedRestrictedSection,
     attendanceLogs,
     workers,
+    paperSlips,
   } = useApp();
 
-  const isContractor = activeUserRole === 'CONTRATISTA';
+  const isGerencia = adminRole === 'GERENCIA';
 
-  const handleRestrictedClick = (featureName: string) => {
-    if (isContractor) {
-      setAttemptedRestrictedSection(featureName);
-      setActiveContractorWarningModal(true);
-    } else {
-      setCurrentView('requests');
-    }
-  };
+  // Menú exclusivo de Gerencia (Estrictamente Business Intelligence)
+  const gerenciaNavItems = [
+    {
+      id: 'dashboard_bi',
+      label: 'Dashboard BI Ejecutivo',
+      icon: BarChart3,
+      badge: 'KPIs',
+      description: 'Paneles de alto nivel, asistencias vs faltas y puntualidad',
+    },
+    {
+      id: 'economic_impact',
+      label: 'Impacto Económico',
+      icon: DollarSign,
+      badge: 'Financiero',
+      description: 'Cálculo referencial de pérdidas por tardanzas',
+    },
+    {
+      id: 'incidences',
+      label: 'Áreas con Más Incidencias',
+      icon: TrendingDown,
+      badge: 'Análisis',
+      description: 'Matriz comparativa de tardanzas y ausentismo por área',
+    },
+    {
+      id: 'effectiveness',
+      label: 'Efectividad & Desempeño',
+      icon: Gauge,
+      badge: 'Auditoría',
+      description: 'Métricas de efectividad individual y mensual',
+    },
+    {
+      id: 'attendance',
+      label: 'Supervisión de Marcaciones',
+      icon: Clock,
+      badge: attendanceLogs.length.toString(),
+      description: 'Auditoría de lecturas RFID UHF en tiempo real',
+    },
+  ];
 
-  const navItems = [
+  // Menú exclusivo de Recursos Humanos (Estrictamente Operativo)
+  const rrhhNavItems = [
     {
       id: 'dashboard',
-      label: 'Dashboard General',
+      label: 'Panel Operativo RRHH',
       icon: LayoutDashboard,
       badge: null,
+      description: 'Aforo de planta y actividad en tiempo real',
+    },
+    {
+      id: 'personnel',
+      label: 'Gestión de Personal & Horarios',
+      icon: Users,
+      badge: workers.length.toString(),
+      description: 'Trabajadores regulares, contratistas y practicantes',
+    },
+    {
+      id: 'attendance',
+      label: 'Control de Asistencia RFID',
+      icon: Clock,
+      badge: attendanceLogs.length.toString(),
+      description: 'Bitácora cronológica y tolerancias de ingreso',
+    },
+    {
+      id: 'requests',
+      label: 'Aprobación de Papeletas',
+      icon: FileText,
+      badge: paperSlips.length.toString(),
+      description: 'Permisos, descansos médicos y vacaciones 365d',
+    },
+    {
+      id: 'payroll_deductions',
+      label: 'Cálculo de Descuentos',
+      icon: Calculator,
+      badge: 'Planilla',
+      description: 'Descuentos referenciales por minuto de tardanza',
     },
     {
       id: 'effectiveness',
       label: 'Efectividad Individual',
       icon: Gauge,
-      badge: 'Mensual',
-    },
-    {
-      id: 'attendance',
-      label: 'Control de Asistencia',
-      icon: Clock,
-      badge: attendanceLogs.length.toString(),
-    },
-    {
-      id: 'personnel',
-      label: 'Gestión de Personal',
-      icon: Users,
-      badge: workers.length.toString(),
-    },
-    {
-      id: 'requests',
-      label: 'Papeletas & Solicitudes',
-      icon: FileText,
-      badge: isContractor ? 'Restringido' : null,
-      isRestricted: isContractor,
-    },
-    {
-      id: 'scanner',
-      label: 'Simulador RFID',
-      icon: Radio,
-      badge: 'En vivo',
+      badge: null,
+      description: 'Evaluación mensual de efectividad por trabajador',
     },
   ];
 
-  const employeeBenefits = [
-    {
-      id: 'vacaciones',
-      label: 'Vacaciones Anuales',
-      icon: CalendarDays,
-    },
-    {
-      id: 'permisos',
-      label: 'Permisos & Licencias',
-      icon: FileSpreadsheet,
-    },
-    {
-      id: 'descansos',
-      label: 'Descansos Médicos',
-      icon: FileHeart,
-    },
-  ];
+  const activeNavItems = isGerencia ? gerenciaNavItems : rrhhNavItems;
 
   return (
     <aside
-      className={`relative flex flex-col bg-white dark:bg-slate-900 border-r border-slate-200 dark:border-slate-800 transition-all duration-200 z-30 select-none ${
+      className={`relative flex flex-col bg-white border-r border-slate-200 transition-all duration-200 z-30 select-none ${
         sidebarCollapsed ? 'w-16' : 'w-64'
       }`}
     >
-      {/* Brand Header Minimalista */}
-      <div className="h-16 flex items-center justify-between px-3.5 border-b border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900">
+      {/* Brand Header */}
+      <div className="h-16 flex items-center justify-between px-3.5 border-b border-slate-200 bg-white">
         <div className="flex items-center gap-2.5 overflow-hidden">
-          <div className="flex items-center justify-center w-8 h-8 rounded-lg bg-slate-900 text-white dark:bg-slate-100 dark:text-slate-900 shrink-0 font-bold text-xs">
+          <div className="flex items-center justify-center w-8 h-8 rounded-lg bg-slate-900 text-white shrink-0 font-bold text-xs tracking-tight shadow-xs">
             FB
           </div>
 
           {!sidebarCollapsed && (
             <div className="flex flex-col min-w-0">
-              <span className="text-xs font-bold tracking-tight text-slate-900 dark:text-white truncate">
+              <span className="text-xs font-bold tracking-tight text-slate-900 truncate">
                 FACTORÍA BRUCE
               </span>
-              <span className="text-[10px] text-slate-400 font-mono tracking-wider uppercase">
-                Sistema RFID
+              <span className="text-[10px] text-slate-500 font-medium tracking-tight truncate leading-tight">
+                Control RFID & Business Intelligence
               </span>
             </div>
           )}
@@ -129,44 +146,45 @@ export const Sidebar: React.FC = () => {
         <button
           type="button"
           onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
-          className="p-1 rounded-md text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
+          className="p-1 rounded-md text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-colors cursor-pointer"
           title={sidebarCollapsed ? 'Expandir menú' : 'Colapsar menú'}
         >
           {sidebarCollapsed ? <ChevronRight className="w-4 h-4" /> : <ChevronLeft className="w-4 h-4" />}
         </button>
       </div>
 
-      {/* Indicador de Perfil */}
-      {!sidebarCollapsed ? (
-        <div className="mx-3 my-3 p-2.5 rounded-lg bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 text-xs">
+      {/* Indicador de Entorno Activo */}
+      {!sidebarCollapsed && (
+        <div className="mx-3 my-3 p-3 rounded-xl bg-slate-50 border border-slate-200 text-xs">
           <div className="flex items-center justify-between mb-1">
-            <span className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider">
-              Régimen Activo
+            <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">
+              Entorno Activo
             </span>
-            <span className="inline-flex items-center gap-1 text-[10px] font-medium text-slate-700 dark:text-slate-300">
-              {isContractor ? <HardHat className="w-3 h-3" /> : <UserCheck className="w-3 h-3" />}
-              {isContractor ? 'Contratista' : 'Planilla'}
+            <span className={`inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full ${
+              isGerencia ? 'bg-slate-900 text-white' : 'bg-blue-700 text-white'
+            }`}>
+              {isGerencia ? 'Gerencia (BI)' : 'RRHH Operativo'}
             </span>
           </div>
-          <p className="text-[11px] text-slate-500 leading-snug">
-            {isContractor
-              ? 'Acceso a solicitudes restringido.'
-              : 'Gestión total de asistencia y personal.'}
+          <p className="text-[11px] text-slate-600 leading-snug mt-1">
+            {isGerencia
+              ? 'Perspectiva analítica ejecutiva, análisis financiero y ausentismo.'
+              : 'Operatividad de planta, padrón de personal, horarios y papeletas.'}
           </p>
         </div>
-      ) : null}
+      )}
 
       {/* Navegación Principal */}
       <div className="flex-1 overflow-y-auto px-2 py-2 space-y-4">
         <div>
           {!sidebarCollapsed && (
-            <div className="px-2 mb-1.5 text-[10px] font-semibold uppercase tracking-wider text-slate-400">
-              Menú Principal
+            <div className="px-2 mb-1.5 text-[10px] font-bold uppercase tracking-wider text-slate-400">
+              {isGerencia ? 'Módulos de Business Intelligence' : 'Módulos Operativos RRHH'}
             </div>
           )}
 
-          <nav className="space-y-0.5">
-            {navItems.map((item) => {
+          <nav className="space-y-1">
+            {activeNavItems.map((item) => {
               const Icon = item.icon;
               const isActive = currentView === item.id;
 
@@ -176,23 +194,23 @@ export const Sidebar: React.FC = () => {
                   type="button"
                   onClick={() => setCurrentView(item.id)}
                   title={sidebarCollapsed ? item.label : undefined}
-                  className={`w-full flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-xs font-medium transition-colors cursor-pointer ${
+                  className={`w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs font-semibold transition-colors cursor-pointer text-left ${
                     isActive
-                      ? 'bg-slate-900 text-white dark:bg-slate-100 dark:text-slate-900 font-semibold'
-                      : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800'
+                      ? 'bg-slate-900 text-white font-bold shadow-xs'
+                      : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
                   }`}
                 >
-                  <Icon className="w-4 h-4 shrink-0" />
+                  <Icon className={`w-4 h-4 shrink-0 ${isActive ? 'text-white' : 'text-slate-500'}`} />
 
                   {!sidebarCollapsed && (
                     <div className="flex-1 flex items-center justify-between min-w-0">
                       <span className="truncate">{item.label}</span>
                       {item.badge && (
                         <span
-                          className={`text-[10px] px-1.5 py-0.2 rounded font-mono ${
+                          className={`text-[10px] px-1.5 py-0.5 rounded font-mono font-medium ${
                             isActive
-                              ? 'bg-slate-800 text-slate-200 dark:bg-slate-200 dark:text-slate-900'
-                              : 'bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-400'
+                              ? 'bg-slate-800 text-slate-200'
+                              : 'bg-slate-200 text-slate-700'
                           }`}
                         >
                           {item.badge}
@@ -206,77 +224,36 @@ export const Sidebar: React.FC = () => {
           </nav>
         </div>
 
-        {/* Sección de Beneficios & Solicitudes */}
-        <div>
-          {!sidebarCollapsed && (
-            <div className="px-2 mb-1.5 flex items-center justify-between text-[10px] font-semibold uppercase tracking-wider text-slate-400">
-              <span>Beneficios Laborales</span>
-              {isContractor && <span className="text-[9px] text-amber-600">Restringido</span>}
+        {/* Sección de Políticas y Normativa */}
+        {!sidebarCollapsed && (
+          <div className="pt-2 border-t border-slate-100">
+            <div className="px-2 mb-1.5 text-[10px] font-bold uppercase tracking-wider text-slate-400 flex items-center gap-1">
+              <ShieldCheck className="w-3 h-3 text-slate-500" />
+              <span>Directiva 2026</span>
             </div>
-          )}
-
-          <div className="space-y-0.5">
-            {employeeBenefits.map((benefit) => {
-              const Icon = benefit.icon;
-
-              if (isContractor) {
-                return (
-                  <button
-                    key={benefit.id}
-                    type="button"
-                    onClick={() => handleRestrictedClick(benefit.label)}
-                    title={sidebarCollapsed ? `${benefit.label} (No aplica a contratistas)` : undefined}
-                    className="w-full flex items-center gap-2.5 px-2.5 py-1.5 rounded-lg text-xs text-slate-400 dark:text-slate-600 hover:bg-slate-50 dark:hover:bg-slate-800/40 cursor-not-allowed opacity-70"
-                  >
-                    <div className="relative">
-                      <Icon className="w-3.5 h-3.5" />
-                      <Lock className="w-2 h-2 text-slate-500 absolute -top-1 -right-1" />
-                    </div>
-                    {!sidebarCollapsed && (
-                      <div className="flex-1 flex items-center justify-between min-w-0">
-                        <span className="line-through truncate">{benefit.label}</span>
-                        <span className="text-[9px] text-slate-400 font-mono">No aplica</span>
-                      </div>
-                    )}
-                  </button>
-                );
-              }
-
-              return (
-                <button
-                  key={benefit.id}
-                  type="button"
-                  onClick={() => setCurrentView('requests')}
-                  title={sidebarCollapsed ? benefit.label : undefined}
-                  className="w-full flex items-center gap-2.5 px-2.5 py-1.5 rounded-lg text-xs text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
-                >
-                  <Icon className="w-3.5 h-3.5 text-slate-400" />
-                  {!sidebarCollapsed && (
-                    <div className="flex-1 flex items-center justify-between min-w-0">
-                      <span className="truncate">{benefit.label}</span>
-                      <span className="text-[9px] text-emerald-600 dark:text-emerald-400 font-medium">Activo</span>
-                    </div>
-                  )}
-                </button>
-              );
-            })}
+            <div className="px-2 space-y-1 text-[11px] text-slate-600">
+              <div className="p-2 rounded-lg bg-slate-50 border border-slate-200">
+                <span className="font-bold text-slate-800 block text-[10px]">Tolerancia en Puerta:</span>
+                <span>07:30 a 07:35 AM (con descuento). &gt;07:35 AM Puerta Cerrada.</span>
+              </div>
+            </div>
           </div>
-        </div>
+        )}
       </div>
 
       {/* Footer Minimalista */}
-      <div className="p-3 border-t border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950">
+      <div className="p-3 border-t border-slate-200 bg-slate-50">
         {!sidebarCollapsed ? (
           <div className="flex items-center gap-2 text-xs">
-            <Building className="w-3.5 h-3.5 text-slate-400 shrink-0" />
+            <Building className="w-4 h-4 text-slate-400 shrink-0" />
             <div className="min-w-0">
-              <p className="font-semibold text-slate-800 dark:text-slate-200 truncate text-[11px]">Planta Metalmecánica</p>
-              <p className="text-[10px] text-slate-400 truncate">Trujillo, Perú</p>
+              <p className="font-bold text-slate-800 truncate text-[11px]">Factoría Bruce S.A.</p>
+              <p className="text-[10px] text-slate-500 truncate">Parque Industrial • Trujillo, Perú</p>
             </div>
           </div>
         ) : (
           <div className="flex justify-center text-slate-400">
-            <Building className="w-3.5 h-3.5" />
+            <Building className="w-4 h-4" />
           </div>
         )}
       </div>

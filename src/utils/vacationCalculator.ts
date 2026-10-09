@@ -86,7 +86,7 @@ export function evaluateWorkerVacation(
       isEligibleFor30Days: false,
       vacationDaysAvailable: 0,
       statusLabel: 'No aplica',
-      badgeColorClass: 'bg-slate-100 text-slate-600 border-slate-300 dark:bg-slate-800 dark:text-slate-400 dark:border-slate-700',
+      badgeColorClass: 'bg-slate-100 text-slate-600 border-slate-300',
       displaySummary: 'No aplica (Contratista)',
     };
   }
@@ -109,7 +109,7 @@ export function evaluateWorkerVacation(
       isEligibleFor30Days: false,
       vacationDaysAvailable: 0, // Cero estricto
       statusLabel: 'No habilitado',
-      badgeColorClass: 'bg-amber-50 text-amber-800 border-amber-200 dark:bg-amber-950/40 dark:text-amber-300 dark:border-amber-800',
+      badgeColorClass: 'bg-amber-50 text-amber-800 border-amber-200',
       displaySummary: `0 días (No habilitado - Faltan ${daysRemaining} días)`,
     };
   }
@@ -129,7 +129,7 @@ export function evaluateWorkerVacation(
     isEligibleFor30Days: true,
     vacationDaysAvailable: daysAvailable,
     statusLabel: 'Habilitado',
-    badgeColorClass: 'bg-emerald-50 text-emerald-800 border-emerald-200 dark:bg-emerald-950/40 dark:text-emerald-300 dark:border-emerald-800',
+    badgeColorClass: 'bg-emerald-50 text-emerald-800 border-emerald-200',
     displaySummary: `${daysAvailable} días disponibles (Habilitado)`,
   };
 }

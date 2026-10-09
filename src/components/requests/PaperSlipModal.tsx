@@ -39,7 +39,7 @@ export const PaperSlipModal: React.FC<PaperSlipModalProps> = ({
   const [departureDate, setDepartureDate] = useState<string>('2026-10-05');
   const [departureTime, setDepartureTime] = useState<string>('07:30');
   const [returnDate, setReturnDate] = useState<string>('2026-10-12');
-  const [returnTime, setReturnTime] = useState<string>('17:00');
+  const [returnTime, setReturnTime] = useState<string>('16:30');
 
   // Specific Conditional States
   const [personalCompensationType, setPersonalCompensationType] = useState<'DESCUENTO_PLANILLA' | 'COMPENSAR_HORAS'>('COMPENSAR_HORAS');
@@ -64,7 +64,7 @@ export const PaperSlipModal: React.FC<PaperSlipModalProps> = ({
         setDepartureDate('2026-10-05');
         setDepartureTime('07:30');
         setReturnDate('2026-10-12');
-        setReturnTime('17:00');
+        setReturnTime('16:30');
       }
     }
   }, [initialMotive]);
@@ -148,141 +148,130 @@ export const PaperSlipModal: React.FC<PaperSlipModalProps> = ({
     { value: 'DESCANSO_MEDICO', label: '1. Descanso Médico', description: 'Incapacidad médica certificada por ESSALUD/MINSA' },
     { value: 'ATENCION_MEDICA', label: '2. Atención Médica', description: 'Cita médica o urgencia en centro asistencial' },
     { value: 'PERMISO_PERSONAL', label: '3. Permiso Personal Sin Contraprestación', description: 'Asunto particular. Horas a descontar o compensar' },
-    { value: 'COMISION_SERVICIO', label: '4. Comisión de Servicio', description: 'Gestión externa oficial por cuenta de la empresa' },
-    { value: 'ONOMASTICO', label: '5. Descanso por Onomástico', description: 'Día de descanso remunerado por fecha de cumpleaños' },
-    { value: 'VACACIONES', label: '6. Período Vacacional de Ley', description: 'Mínimo 7 días consecutivos. Requiere 365 días laborados' },
-    { value: 'CAPACITACION', label: '7. Capacitación Oficializada', description: 'Eventos formativos requeridos por la empresa o SUNAFIL' },
-    { value: 'OMISION_MARCADO', label: '8. Omisión de Marcado de Reloj', description: 'Justificación excepcional de falta de marcado RFID' },
-    { value: 'INGRESO_FUERA_TOLERANCIA', label: '9. Autorización Fuera de Tolerancia', description: 'Ingreso > 07:35 AM. Aprobación exclusiva Jefe de Planta' },
-    { value: 'COMPENSACION_HORAS', label: '10. Compensación de Horas Extra', description: 'Compensación de sobretiempo debidamente autorizado' },
+    { value: 'COMISION_SERVICIO', label: '4. Comisión de Servicio / Trámite Externo', description: 'Labor técnica fuera de planta autorizada' },
+    { value: 'ONOMASTICO', label: '5. Día de Onomástico (Cumpleaños)', description: 'Descanso remunerado por cumpleaños' },
+    { value: 'VACACIONES', label: '6. Período Vacacional (Regla 365 días)', description: 'Fraccionamiento anual legal (Mínimo 7 días calendario)' },
+    { value: 'CAPACITACION', label: '7. Capacitación Técnica / Seguridad', description: 'Cursos de homologación, soldadura o HSE' },
+    { value: 'OMISION_MARCADO', label: '8. Omisión de Marcado RFID', description: 'Regularización por falla de lectura o tarjeta olvidada' },
+    { value: 'INGRESO_FUERA_TOLERANCIA', label: '9. Autorización de Ingreso Fuera de Tolerancia', description: 'Ingreso excepcional pasadas las 07:35 AM' },
+    { value: 'COMPENSACION_HORAS', label: '10. Compensación de Horas Extraordinarias', description: 'Descanso compensatorio por sobretiempo previo' },
   ];
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 transition-opacity animate-fadeIn">
-      <div className="relative w-full max-w-2xl bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-xl shadow-lg overflow-hidden p-6 text-slate-900 dark:text-slate-100 max-h-[92vh] overflow-y-auto text-xs">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-xs animate-fadeIn">
+      <div className="relative w-full max-w-2xl bg-white border border-slate-300 rounded-2xl shadow-xl p-6 text-slate-900 max-h-[92vh] overflow-y-auto">
         
         {/* Cabecera */}
-        <div className="flex items-start justify-between pb-3 mb-4 border-b border-slate-200 dark:border-slate-800">
+        <div className="flex items-start justify-between pb-3 mb-4 border-b border-slate-200">
           <div>
-            <span className="text-[10px] font-mono text-slate-500 uppercase tracking-widest block">
-              Formulario Oficial de Personal • Factoría Bruce S.A.
-            </span>
-            <h3 className="text-base font-bold text-slate-900 dark:text-white">
-              Emisión de Papeleta Digital de Salida o Autorización
+            <div className="flex items-center gap-2">
+              <span className="text-[10px] font-mono uppercase tracking-wider bg-slate-100 text-slate-700 px-2 py-0.5 rounded font-bold border border-slate-200">
+                Factoría Bruce S.A.
+              </span>
+              <span className="text-xs text-slate-500 font-mono">Formulario RRHH-04</span>
+            </div>
+            <h3 className="text-base font-bold text-slate-900 mt-1">
+              Emisión de Papeleta Oficial de Salida / Permiso
             </h3>
           </div>
+
           <button
             type="button"
             onClick={onClose}
-            className="p-1.5 text-slate-400 hover:text-slate-800 dark:hover:text-white rounded-md cursor-pointer"
+            className="p-1.5 text-slate-400 hover:text-slate-800 rounded-lg hover:bg-slate-100 transition-colors cursor-pointer"
           >
             <X className="w-5 h-5" />
           </button>
         </div>
 
-        {/* Formulario */}
-        <form onSubmit={handleSubmit} className="space-y-4">
+        <form onSubmit={handleSubmit} className="space-y-4 text-xs">
           
-          {/* 1. Seleccionar Colaborador */}
-          <div className="space-y-1.5">
-            <label className="block text-slate-800 dark:text-slate-200 font-semibold">
-              1. Colaborador Solicitante:
+          {/* 1. Selección de Colaborador */}
+          <div className="space-y-1 relative">
+            <label className="block text-slate-800 font-bold">
+              1. Colaborador Solicitante: *
             </label>
-            <div className="relative">
-              <button
-                type="button"
-                onClick={() => setIsWorkerDropdownOpen(!isWorkerDropdownOpen)}
-                className="w-full flex items-center justify-between p-2.5 bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-lg text-left cursor-pointer"
-              >
-                <div className="flex items-center gap-2.5 min-w-0">
-                  <img
-                    src={selectedWorker.avatarUrl}
-                    alt={selectedWorker.name}
-                    className="w-7 h-7 rounded-md object-cover border border-slate-300 dark:border-slate-700 shrink-0"
+
+            <button
+              type="button"
+              onClick={() => setIsWorkerDropdownOpen(!isWorkerDropdownOpen)}
+              className="w-full flex items-center justify-between px-3 py-2.5 bg-slate-50 border border-slate-300 rounded-lg text-left hover:border-slate-400 transition-colors cursor-pointer"
+            >
+              <div className="flex items-center gap-2.5">
+                <img
+                  src={selectedWorker.avatarUrl}
+                  alt={selectedWorker.name}
+                  className="w-7 h-7 rounded-lg object-cover border border-slate-200"
+                />
+                <div>
+                  <span className="font-bold text-slate-900 block leading-tight">{selectedWorker.name}</span>
+                  <span className="text-[11px] text-slate-500 font-mono">DNI: {selectedWorker.dni} • {selectedWorker.position}</span>
+                </div>
+              </div>
+              <ChevronDown className="w-4 h-4 text-slate-400" />
+            </button>
+
+            {isWorkerDropdownOpen && (
+              <div className="absolute top-full left-0 right-0 mt-1 bg-white border border-slate-200 rounded-xl shadow-lg p-2 z-50 max-h-56 overflow-y-auto space-y-1">
+                <div className="relative mb-2">
+                  <Search className="w-3.5 h-3.5 text-slate-400 absolute left-2.5 top-1/2 -translate-y-1/2" />
+                  <input
+                    type="text"
+                    placeholder="Buscar por nombre, DNI o cargo..."
+                    value={workerSearchTerm}
+                    onChange={(e) => setWorkerSearchTerm(e.target.value)}
+                    className="w-full pl-8 pr-2.5 py-1.5 bg-slate-50 border border-slate-200 rounded-lg text-xs text-slate-900 focus:outline-none focus:border-slate-900"
                   />
-                  <div className="min-w-0">
-                    <span className="font-semibold text-slate-900 dark:text-white block truncate">
-                      {selectedWorker.name}
-                    </span>
-                    <span className="text-[10px] text-slate-500 font-mono">
-                      ID #{selectedWorker.id} • DNI: {selectedWorker.dni} • {selectedWorker.position}
-                    </span>
-                  </div>
                 </div>
-                <ChevronDown className="w-4 h-4 text-slate-400" />
-              </button>
-
-              {isWorkerDropdownOpen && (
-                <div className="absolute left-0 right-0 mt-1 z-30 bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-lg shadow-md p-2 space-y-2 animate-fadeIn">
-                  <div className="relative">
-                    <Search className="w-3.5 h-3.5 text-slate-400 absolute left-2.5 top-1/2 -translate-y-1/2" />
-                    <input
-                      type="text"
-                      value={workerSearchTerm}
-                      onChange={(e) => setWorkerSearchTerm(e.target.value)}
-                      placeholder="Filtrar por nombre, DNI o cargo..."
-                      className="w-full pl-8 pr-3 py-1.5 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-md text-xs focus:outline-none"
-                    />
-                  </div>
-
-                  <div className="max-h-48 overflow-y-auto divide-y divide-slate-100 dark:divide-slate-800">
-                    {filteredWorkers.map((w) => (
-                      <button
-                        key={w.id}
-                        type="button"
-                        onClick={() => {
-                          setSelectedWorkerId(w.id);
-                          setIsWorkerDropdownOpen(false);
-                        }}
-                        className="w-full flex items-center justify-between p-2 hover:bg-slate-50 dark:hover:bg-slate-800 text-left transition-colors cursor-pointer"
-                      >
-                        <div>
-                          <p className="font-medium text-slate-900 dark:text-white text-xs">{w.name}</p>
-                          <p className="text-[10px] text-slate-500">{w.position}</p>
-                        </div>
-                        <Badge value={w.type} size="sm" />
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              )}
-            </div>
-          </div>
-
-          {/* 2. Seleccionar Motivo Oficial */}
-          <div className="space-y-1.5">
-            <label className="block text-slate-800 dark:text-slate-200 font-semibold">
-              2. Motivo Oficial de la Papeleta:
-            </label>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-              {MOTIVE_OPTIONS.map((item) => {
-                const isSelected = motive === item.value;
-                return (
+                {filteredWorkers.map((w) => (
                   <button
-                    key={item.value}
+                    key={w.id}
                     type="button"
-                    onClick={() => setMotive(item.value)}
-                    className={`p-2.5 rounded-lg border text-left cursor-pointer transition-colors ${
-                      isSelected
-                        ? 'bg-slate-900 text-white dark:bg-slate-100 dark:text-slate-900 border-slate-900 dark:border-slate-100 shadow-xs'
-                        : 'bg-slate-50 dark:bg-slate-950 border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-100'
+                    onClick={() => {
+                      setSelectedWorkerId(w.id);
+                      setIsWorkerDropdownOpen(false);
+                    }}
+                    className={`w-full flex items-center justify-between p-2 rounded-lg text-left text-xs transition-colors cursor-pointer ${
+                      Number(w.id) === Number(selectedWorkerId) ? 'bg-slate-100 font-bold' : 'hover:bg-slate-50'
                     }`}
                   >
-                    <span className="font-semibold block truncate text-xs">{item.label}</span>
-                    <span className={`text-[10px] block mt-0.5 line-clamp-1 ${isSelected ? 'text-slate-300 dark:text-slate-700' : 'text-slate-500'}`}>
-                      {item.description}
-                    </span>
+                    <div>
+                      <span className="text-slate-900 font-medium block">{w.name}</span>
+                      <span className="text-[10px] text-slate-500 font-mono">DNI: {w.dni} • {w.position}</span>
+                    </div>
+                    <Badge value={w.type} size="sm" />
                   </button>
-                );
-              })}
-            </div>
+                ))}
+              </div>
+            )}
           </div>
 
-          {/* Modalidad de Compensación (Condicional para Permiso Personal) */}
+          {/* 2. Motivo Oficial */}
+          <div className="space-y-1">
+            <label className="block text-slate-800 font-bold">
+              2. Motivo Oficial de la Papeleta: *
+            </label>
+            <select
+              value={motive}
+              onChange={(e) => setMotive(e.target.value as PaperSlipMotive)}
+              className="w-full px-3 py-2.5 bg-slate-50 border border-slate-300 rounded-lg text-slate-900 font-semibold focus:outline-none focus:border-slate-900 cursor-pointer"
+            >
+              {MOTIVE_OPTIONS.map((opt) => (
+                <option key={opt.value} value={opt.value}>
+                  {opt.label}
+                </option>
+              ))}
+            </select>
+            <p className="text-[11px] text-slate-500 mt-1">
+              {MOTIVE_OPTIONS.find((o) => o.value === motive)?.description}
+            </p>
+          </div>
+
+          {/* Compensación (Condicional para Permiso Personal) */}
           {motive === 'PERMISO_PERSONAL' && (
-            <div className="p-3 rounded-lg bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 space-y-1.5">
-              <label className="block font-semibold text-slate-800 dark:text-slate-200 text-xs">
-                Modalidad de Compensación de Permiso Particular:
+            <div className="p-3 rounded-xl bg-slate-50 border border-slate-200 space-y-1.5">
+              <label className="block font-bold text-slate-800 text-xs">
+                Modalidad de Compensación (Permiso Personal):
               </label>
               <div className="flex gap-4">
                 <label className="flex items-center gap-1.5 cursor-pointer">
@@ -292,7 +281,7 @@ export const PaperSlipModal: React.FC<PaperSlipModalProps> = ({
                     checked={personalCompensationType === 'COMPENSAR_HORAS'}
                     onChange={() => setPersonalCompensationType('COMPENSAR_HORAS')}
                   />
-                  <span>Compensación de horas con sobretiempo</span>
+                  <span>Compensación con horas de trabajo</span>
                 </label>
                 <label className="flex items-center gap-1.5 cursor-pointer">
                   <input
@@ -309,8 +298,8 @@ export const PaperSlipModal: React.FC<PaperSlipModalProps> = ({
 
           {/* Autoridad de Aprobación (Condicional para Fuera de Tolerancia) */}
           {motive === 'INGRESO_FUERA_TOLERANCIA' && (
-            <div className="p-3 rounded-lg bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 space-y-1.5">
-              <label className="block font-semibold text-slate-800 dark:text-slate-200 text-xs">
+            <div className="p-3 rounded-xl bg-slate-50 border border-slate-200 space-y-1.5">
+              <label className="block font-bold text-slate-800 text-xs">
                 Autoridad que aprueba el ingreso excepcional:
               </label>
               <div className="flex gap-4">
@@ -338,70 +327,70 @@ export const PaperSlipModal: React.FC<PaperSlipModalProps> = ({
 
           {/* Alerta de Vacaciones si no está habilitado */}
           {motive === 'VACACIONES' && vacationValidationError && (
-            <div className="p-3 rounded-lg bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800 text-amber-800 dark:text-amber-300 flex items-start gap-2">
-              <AlertTriangle className="w-4 h-4 shrink-0 mt-0.5" />
+            <div className="p-3 rounded-xl bg-amber-50 border border-amber-200 text-amber-900 flex items-start gap-2">
+              <AlertTriangle className="w-4 h-4 shrink-0 mt-0.5 text-amber-700" />
               <div className="space-y-0.5">
-                <span className="font-semibold block">Inhabilitado para Solicitud de Vacaciones:</span>
+                <span className="font-bold block">Inhabilitado para Solicitud de Vacaciones:</span>
                 <span>{vacationValidationError}</span>
               </div>
             </div>
           )}
 
           {/* 3. Fechas y Horas */}
-          <div className="p-3.5 rounded-lg bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 space-y-3">
-            <span className="font-semibold text-slate-800 dark:text-slate-200 block">
+          <div className="p-3.5 rounded-xl bg-slate-50 border border-slate-200 space-y-3">
+            <span className="font-bold text-slate-800 block">
               3. Horario y Rango del Permiso:
             </span>
 
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
               <div className="space-y-1">
-                <label className="text-[10px] text-slate-500 font-semibold block">Fecha Salida *</label>
+                <label className="text-[10px] text-slate-500 font-bold block">Fecha Salida *</label>
                 <input
                   type="date"
                   required
                   value={departureDate}
                   onChange={(e) => setDepartureDate(e.target.value)}
-                  className="w-full px-2.5 py-1.5 bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-md font-mono text-xs"
+                  className="w-full px-2.5 py-1.5 bg-white border border-slate-300 rounded-md font-mono text-xs text-slate-900"
                 />
               </div>
 
               <div className="space-y-1">
-                <label className="text-[10px] text-slate-500 font-semibold block">Hora Salida *</label>
+                <label className="text-[10px] text-slate-500 font-bold block">Hora Salida *</label>
                 <input
                   type="time"
                   required
                   value={departureTime}
                   onChange={(e) => setDepartureTime(e.target.value)}
-                  className="w-full px-2.5 py-1.5 bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-md font-mono text-xs"
+                  className="w-full px-2.5 py-1.5 bg-white border border-slate-300 rounded-md font-mono text-xs text-slate-900"
                 />
               </div>
 
               <div className="space-y-1">
-                <label className="text-[10px] text-slate-500 font-semibold block">Fecha Retorno *</label>
+                <label className="text-[10px] text-slate-500 font-bold block">Fecha Retorno *</label>
                 <input
                   type="date"
                   required
                   value={returnDate}
                   onChange={(e) => setReturnDate(e.target.value)}
-                  className="w-full px-2.5 py-1.5 bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-md font-mono text-xs"
+                  className="w-full px-2.5 py-1.5 bg-white border border-slate-300 rounded-md font-mono text-xs text-slate-900"
                 />
               </div>
 
               <div className="space-y-1">
-                <label className="text-[10px] text-slate-500 font-semibold block">Hora Retorno *</label>
+                <label className="text-[10px] text-slate-500 font-bold block">Hora Retorno *</label>
                 <input
                   type="time"
                   required
                   value={returnTime}
                   onChange={(e) => setReturnTime(e.target.value)}
-                  className="w-full px-2.5 py-1.5 bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-md font-mono text-xs"
+                  className="w-full px-2.5 py-1.5 bg-white border border-slate-300 rounded-md font-mono text-xs text-slate-900"
                 />
               </div>
             </div>
 
-            <div className="pt-2 border-t border-slate-200 dark:border-slate-800 flex items-center justify-between text-[11px]">
+            <div className="pt-2 border-t border-slate-200 flex items-center justify-between text-[11px]">
               <span className="text-slate-500">Duración computable:</span>
-              <span className="font-mono font-semibold text-slate-900 dark:text-white">
+              <span className="font-mono font-bold text-slate-900">
                 {daysCount} {daysCount === 1 ? 'día' : 'días'} ({daysCount * 8} horas de jornada)
               </span>
             </div>
@@ -409,7 +398,7 @@ export const PaperSlipModal: React.FC<PaperSlipModalProps> = ({
 
           {/* 4. Razón o Justificación */}
           <div className="space-y-1">
-            <label className="block text-slate-800 dark:text-slate-200 font-semibold">
+            <label className="block text-slate-800 font-bold">
               4. Justificación Oficial: *
             </label>
             <textarea
@@ -418,16 +407,16 @@ export const PaperSlipModal: React.FC<PaperSlipModalProps> = ({
               value={reason}
               onChange={(e) => setReason(e.target.value)}
               placeholder="Detallar el motivo de la papeleta o referencia formal..."
-              className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-lg text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:border-slate-900 dark:focus:border-slate-100"
+              className="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-lg text-slate-900 placeholder-slate-400 focus:outline-none focus:border-slate-900 focus:bg-white"
             />
           </div>
 
-          {/* Botones de acción */}
-          <div className="pt-3 border-t border-slate-200 dark:border-slate-800 flex items-center justify-end gap-2.5">
+          {/* Botones de acción (Sin adjuntar documento por requerimiento explícito) */}
+          <div className="pt-3 border-t border-slate-200 flex items-center justify-end gap-2.5">
             <button
               type="button"
               onClick={onClose}
-              className="px-4 py-2 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 text-slate-700 dark:text-slate-300 font-medium rounded-lg hover:bg-slate-50 transition-colors cursor-pointer"
+              className="px-4 py-2 bg-white border border-slate-300 text-slate-700 font-semibold rounded-lg hover:bg-slate-50 transition-colors cursor-pointer"
             >
               Cancelar
             </button>
@@ -435,7 +424,7 @@ export const PaperSlipModal: React.FC<PaperSlipModalProps> = ({
             <button
               type="submit"
               disabled={Boolean(vacationValidationError)}
-              className="px-4 py-2 bg-slate-900 hover:bg-slate-800 text-white dark:bg-slate-100 dark:hover:bg-slate-200 dark:text-slate-900 font-semibold rounded-lg flex items-center gap-1.5 transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+              className="px-4 py-2 bg-slate-900 hover:bg-slate-800 text-white font-bold rounded-lg flex items-center gap-1.5 transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed shadow-xs"
             >
               <Send className="w-3.5 h-3.5" />
               <span>Emitir Papeleta Oficial</span>

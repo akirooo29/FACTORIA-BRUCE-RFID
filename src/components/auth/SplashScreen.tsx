@@ -65,10 +65,10 @@ export const SplashScreen: React.FC<SplashScreenProps> = ({ onComplete }) => {
         {/* Nombre requerido exactamente por especificación */}
         <div className="space-y-1">
           <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-white font-sans">
-            Factoría Bruce S.A. - Sistema de Asistencia
+            Factoría Bruce S.A.
           </h1>
           <p className="text-xs uppercase tracking-widest text-slate-400 font-medium">
-            Módulo de Control de Accesos & Identificación RFID
+            Sistema Automatizado de Control de Asistencia
           </p>
         </div>
 
