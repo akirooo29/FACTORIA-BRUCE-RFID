@@ -125,13 +125,23 @@ export const Badge: React.FC<BadgeProps> = ({ value, size = 'md', className = ''
     case 'EN_OBSERVACION':
     case 'POR_VENCER':
     case 'PENDIENTE':
+    case 'PRE_INGRESO':
+    case 'NO_VINCULADO':
     case 'FUERA_DE_TURNO':
       return (
         <span
           className={`inline-flex items-center gap-1.5 bg-slate-100 text-slate-700 border border-slate-300 ${sizeClasses} ${className}`}
         >
-          <span className="w-1.5 h-1.5 rounded-full bg-amber-500"></span>
-          {value === 'POR_VENCER' ? 'Por Vencer' : value === 'PENDIENTE' ? 'Pendiente' : value}
+          <span className="w-1.5 h-1.5 rounded-full bg-slate-400"></span>
+          {value === 'POR_VENCER'
+            ? 'Por Vencer'
+            : value === 'PENDIENTE'
+            ? 'Pendiente'
+            : value === 'PRE_INGRESO'
+            ? 'Pre-Ingreso'
+            : value === 'NO_VINCULADO'
+            ? 'No Vinculado'
+            : value}
         </span>
       );
 

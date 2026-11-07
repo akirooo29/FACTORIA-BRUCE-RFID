@@ -1,11 +1,22 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { useApp } from '../context/AppContext';
 import { AreaIncidencesChart } from '../components/bi/AreaIncidencesChart';
-import { DEPARTMENT_BI_DATA } from '../data/mockData';
+import { computeDepartmentBiData } from '../utils/attendanceStatsCalculator';
 import { TrendingDown } from 'lucide-react';
 
 export const AreaIncidencesView: React.FC = () => {
-  const { setCurrentView } = useApp();
+  const { workers, getWorkerStats, setCurrentView } = useApp();
+
+  const departmentData = useMemo(() => {
+    return computeDepartmentBiData(workers, getWorkerStats);
+  }, [workers, getWorkerStats]);
+
+  // Ordenar áreas de mayor a menor según incidencias totales (tardanzas + faltas)
+  const criticalAreas = useMemo(() => {
+    return [...departmentData]
+      .sort((a, b) => (b.tardiness + b.absences) - (a.tardiness + a.absences))
+      .slice(0, 3);
+  }, [departmentData]);
 
   return (
     <div className="space-y-6 animate-fadeIn pb-8">
@@ -35,49 +46,55 @@ export const AreaIncidencesView: React.FC = () => {
       </div>
 
       {/* Gráfico Principal */}
-      <AreaIncidencesChart />
+      <AreaIncidencesChart data={departmentData} />
 
       {/* Tarjetas de Áreas Críticas */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        {DEPARTMENT_BI_DATA.slice(0, 3).map((dept, index) => (
-          <div key={index} className="p-4 rounded-xl bg-white border border-slate-200 shadow-xs space-y-3">
-            <div className="flex items-center justify-between">
-              <span className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider ${
-                index === 0 ? 'bg-red-50 text-red-800 border border-red-200' : 'bg-slate-100 text-slate-700'
-              }`}>
-                Puesto #{index + 1} en Incidencias
-              </span>
-              <span className="text-xs font-mono font-bold text-slate-900">
-                {dept.tardiness + dept.absences} eventos
-              </span>
-            </div>
-
-            <div>
-              <h4 className="font-bold text-sm text-slate-900">{dept.department}</h4>
-              <p className="text-[11px] text-slate-500 mt-0.5">
-                {dept.totalWorkers} colaboradores • {dept.totalDelayMinutes} min acumulados
-              </p>
-            </div>
-
-            <div className="grid grid-cols-2 gap-2 pt-2 border-t border-slate-100 text-xs">
-              <div>
-                <span className="text-[10px] text-slate-400 block">Tardanzas:</span>
-                <span className="font-mono font-bold text-amber-700">{dept.tardiness}</span>
-              </div>
-              <div>
-                <span className="text-[10px] text-slate-400 block">Faltas:</span>
-                <span className="font-mono font-bold text-rose-700">{dept.absences}</span>
-              </div>
-            </div>
-
-            <div className="pt-2 border-t border-slate-100 flex items-center justify-between text-[11px]">
-              <span className="text-slate-500">Impacto Estimado:</span>
-              <strong className="font-mono text-slate-900">
-                S/. {dept.economicDeductionImpact.toLocaleString('es-PE', { minimumFractionDigits: 2 })}
-              </strong>
-            </div>
+        {criticalAreas.length === 0 ? (
+          <div className="col-span-3 p-8 text-center text-slate-400 bg-white rounded-xl border border-slate-200">
+            No se registran datos departamentales de incidencias en la base de datos.
           </div>
-        ))}
+        ) : (
+          criticalAreas.map((dept, index) => (
+            <div key={index} className="p-4 rounded-xl bg-white border border-slate-200 shadow-xs space-y-3">
+              <div className="flex items-center justify-between">
+                <span className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider ${
+                  index === 0 ? 'bg-red-50 text-red-800 border border-red-200' : 'bg-slate-100 text-slate-700'
+                }`}>
+                  Puesto #{index + 1} en Incidencias
+                </span>
+                <span className="text-xs font-mono font-bold text-slate-900">
+                  {dept.tardiness + dept.absences} eventos
+                </span>
+              </div>
+
+              <div>
+                <h4 className="font-bold text-sm text-slate-900">{dept.department}</h4>
+                <p className="text-[11px] text-slate-500 mt-0.5">
+                  {dept.totalWorkers} colaboradores • {dept.totalDelayMinutes} min acumulados
+                </p>
+              </div>
+
+              <div className="grid grid-cols-2 gap-2 pt-2 border-t border-slate-100 text-xs">
+                <div>
+                  <span className="text-[10px] text-slate-400 block">Tardanzas:</span>
+                  <span className="font-mono font-bold text-amber-700">{dept.tardiness}</span>
+                </div>
+                <div>
+                  <span className="text-[10px] text-slate-400 block">Faltas:</span>
+                  <span className="font-mono font-bold text-rose-700">{dept.absences}</span>
+                </div>
+              </div>
+
+              <div className="pt-2 border-t border-slate-100 flex items-center justify-between text-[11px]">
+                <span className="text-slate-500 flex items-center gap-1">⏱️ Horas-Hombre Perdidas:</span>
+                <strong className="font-mono text-slate-900">
+                  {dept.lostManHours} hrs
+                </strong>
+              </div>
+            </div>
+          ))
+        )}
       </div>
     </div>
   );

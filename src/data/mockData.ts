@@ -34,7 +34,6 @@ export const INITIAL_WORKERS: Worker[] = [
     rfidTag: 'RFID-984210',
     status: 'ACTIVO',
     avatarUrl: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80',
-    baseSalary: 4800,
     fecha_ingreso: '2021-03-15',
     hireDate: '2021-03-15',
     vacationDaysAvailable: 18, // Supera 365 días -> Habilitado
@@ -52,7 +51,6 @@ export const INITIAL_WORKERS: Worker[] = [
     rfidTag: 'RFID-112340',
     status: 'ACTIVO',
     avatarUrl: 'https://images.unsplash.com/photo-1580489944761-15a19d654956?w=150&auto=format&fit=crop&q=80',
-    baseSalary: 3800,
     fecha_ingreso: '2022-01-10',
     hireDate: '2022-01-10',
     vacationDaysAvailable: 12, // Supera 365 días -> Habilitado
@@ -70,7 +68,6 @@ export const INITIAL_WORKERS: Worker[] = [
     rfidTag: 'RFID-883192',
     status: 'ACTIVO',
     avatarUrl: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&auto=format&fit=crop&q=80',
-    baseSalary: 3200,
     fecha_ingreso: '2020-08-01',
     hireDate: '2020-08-01',
     vacationDaysAvailable: 24, // Supera 365 días -> Habilitado
@@ -88,7 +85,6 @@ export const INITIAL_WORKERS: Worker[] = [
     rfidTag: 'RFID-449120',
     status: 'ACTIVO',
     avatarUrl: 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=150&auto=format&fit=crop&q=80',
-    baseSalary: 3600,
     // Ingresó hace menos de 365 días (2025-10-15) -> 0 días / "No habilitado"
     fecha_ingreso: '2025-10-15',
     hireDate: '2025-10-15',
@@ -107,7 +103,6 @@ export const INITIAL_WORKERS: Worker[] = [
     rfidTag: 'RFID-229104',
     status: 'ACTIVO',
     avatarUrl: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=150&auto=format&fit=crop&q=80',
-    baseSalary: 4200,
     // Ingresó hace ~6 meses (2026-03-15) -> 0 días / "No habilitado"
     fecha_ingreso: '2026-03-15',
     hireDate: '2026-03-15',
@@ -126,7 +121,6 @@ export const INITIAL_WORKERS: Worker[] = [
     rfidTag: 'RFID-772109',
     status: 'ACTIVO',
     avatarUrl: 'https://images.unsplash.com/photo-1522075469751-3a6694fb2f61?w=150&auto=format&fit=crop&q=80',
-    baseSalary: 2900,
     fecha_ingreso: '2024-05-10',
     hireDate: '2024-05-10',
     contractorCompany: 'Electromecánica del Norte S.A.C.',
@@ -148,7 +142,6 @@ export const INITIAL_WORKERS: Worker[] = [
     rfidTag: 'RFID-665421',
     status: 'ACTIVO',
     avatarUrl: 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=150&auto=format&fit=crop&q=80',
-    baseSalary: 3100,
     fecha_ingreso: '2025-01-20',
     hireDate: '2025-01-20',
     contractorCompany: 'SegurServicio Industrial Corp',
@@ -170,7 +163,6 @@ export const INITIAL_WORKERS: Worker[] = [
     rfidTag: 'RFID-338901',
     status: 'ACTIVO',
     avatarUrl: 'https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?w=150&auto=format&fit=crop&q=80',
-    baseSalary: 3500,
     fecha_ingreso: '2025-06-01',
     hireDate: '2025-06-01',
     contractorCompany: 'TechLogix Soluciones Digitales',
@@ -192,7 +184,6 @@ export const INITIAL_WORKERS: Worker[] = [
     rfidTag: 'RFID-551029',
     status: 'ACTIVO',
     avatarUrl: 'https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?w=150&auto=format&fit=crop&q=80',
-    baseSalary: 1200,
     scheduleType: 'PERSONALIZADO',
     customSchedule: {
       Lunes: { enabled: true, startTime: '08:00', endTime: '14:00' },
@@ -218,7 +209,6 @@ export const INITIAL_WORKERS: Worker[] = [
     rfidTag: 'RFID-881290',
     status: 'ACTIVO',
     avatarUrl: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=150&auto=format&fit=crop&q=80',
-    baseSalary: 1200,
     scheduleType: 'PERSONALIZADO',
     customSchedule: {
       Lunes: { enabled: false, startTime: '08:30', endTime: '14:30' },
@@ -618,10 +608,8 @@ export const calculateVacationProgress = (hireDateStr?: string, daysAvailable = 
 /**
  * Generador de estadísticas mensuales para Septiembre 2026
  */
-export const generateMonthlyStats = (workerId: number | string, workersList: Worker[]): WorkerMonthlyStats => {
+export const generateMonthlyStats = (workerId: number | string, _workersList?: Worker[]): WorkerMonthlyStats => {
   const numId = typeof workerId === 'number' ? workerId : parseInt(String(workerId).replace(/\D/g, ''), 10) || 1;
-  const worker = workersList.find((w) => w.id === numId) || workersList[0];
-  const baseSalary = worker.baseSalary || 3500;
   
   const seed = numId * 47;
   const dayNames = ['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb'];
@@ -904,12 +892,9 @@ export const generateMonthlyStats = (workerId: number | string, workersList: Wor
   const effectivePoints = (punctualDays * 1.0) + (tardyDays * 0.80);
   const effectivenessPercentage = Math.max(0, Math.min(100, Math.round((effectivePoints / evaluatedElapsedWorkdays) * 100)));
 
-  const costPerMinute = (baseSalary / 30) / (8 * 60);
-  const tardyDeduction = Math.round(totalDelayMinutes * costPerMinute * 100) / 100;
-  const dailyRate = baseSalary / 30;
-  const absenceDeduction = Math.round(absentDays * dailyRate * 100) / 100;
-  const salaryDeduction = Math.round(tardyDeduction + absenceDeduction);
-  const calculatedSalary = Math.max(0, Math.round(baseSalary - salaryDeduction));
+  const lostHoursFromTardiness = Math.round((totalDelayMinutes / 60) * 10) / 10;
+  const lostHoursFromAbsence = absentDays * 8;
+  const lostManHours = Math.round((lostHoursFromTardiness + lostHoursFromAbsence) * 10) / 10;
 
   const leavesCount = justifiedDays + vacationDays;
   const leavesPercentageOfMonth = Math.round((leavesCount / Math.max(1, totalWorkdays)) * 100 * 10) / 10;
@@ -928,11 +913,9 @@ export const generateMonthlyStats = (workerId: number | string, workersList: Wor
     leavesCount,
     leavesPercentageOfMonth,
     effectivenessPercentage,
-    baseSalary,
-    calculatedSalary,
-    salaryDeduction,
-    tardyDeduction,
-    absenceDeduction,
+    lostHoursFromTardiness,
+    lostHoursFromAbsence,
+    lostManHours,
     dailyLogs,
   };
 };
@@ -943,16 +926,16 @@ export const generateMonthlyStats = (workerId: number | string, workersList: Wor
 export const ADMIN_USERS: Record<string, AdminUser> = {
   'cpunlay@grupobruce.com': {
     email: 'cpunlay@grupobruce.com',
-    name: 'Ing. Carlos Punlay',
+    name: 'Carlos Pun Lay',
     role: 'GERENCIA',
     title: 'Gerente General & Operaciones',
     department: 'Gerencia General',
   },
   'rrhh@grupobruce.com': {
     email: 'rrhh@grupobruce.com',
-    name: 'Lic. Mariana Vega',
+    name: 'Mesías Mariños',
     role: 'RRHH',
-    title: 'Jefa de Gestión Humana & Bienestar',
+    title: 'Jefe de Gestión Humana & Bienestar',
     department: 'Recursos Humanos',
   },
 };
@@ -981,7 +964,7 @@ export const DEPARTMENT_BI_DATA: DepartmentIncidence[] = [
     justified: 6,
     totalWorkers: 18,
     totalDelayMinutes: 412,
-    economicDeductionImpact: 1485.60,
+    lostManHours: 38.9,
     punctualityRate: 85.1,
   },
   {
@@ -992,7 +975,7 @@ export const DEPARTMENT_BI_DATA: DepartmentIncidence[] = [
     justified: 3,
     totalWorkers: 11,
     totalDelayMinutes: 204,
-    economicDeductionImpact: 780.40,
+    lostManHours: 19.4,
     punctualityRate: 88.7,
   },
   {
@@ -1003,7 +986,7 @@ export const DEPARTMENT_BI_DATA: DepartmentIncidence[] = [
     justified: 2,
     totalWorkers: 7,
     totalDelayMinutes: 88,
-    economicDeductionImpact: 362.20,
+    lostManHours: 9.5,
     punctualityRate: 92.1,
   },
   {
@@ -1014,7 +997,7 @@ export const DEPARTMENT_BI_DATA: DepartmentIncidence[] = [
     justified: 2,
     totalWorkers: 6,
     totalDelayMinutes: 52,
-    economicDeductionImpact: 215.80,
+    lostManHours: 0.9,
     punctualityRate: 94.1,
   },
   {
@@ -1025,7 +1008,7 @@ export const DEPARTMENT_BI_DATA: DepartmentIncidence[] = [
     justified: 1,
     totalWorkers: 5,
     totalDelayMinutes: 44,
-    economicDeductionImpact: 298.50,
+    lostManHours: 8.7,
     punctualityRate: 93.3,
   },
   {
@@ -1036,7 +1019,7 @@ export const DEPARTMENT_BI_DATA: DepartmentIncidence[] = [
     justified: 1,
     totalWorkers: 4,
     totalDelayMinutes: 18,
-    economicDeductionImpact: 86.40,
+    lostManHours: 0.3,
     punctualityRate: 97.1,
   },
 ];
@@ -1045,12 +1028,12 @@ export const DEPARTMENT_BI_DATA: DepartmentIncidence[] = [
  * Business Intelligence: Tendencia Mensual de Ausentismo e Incidencias
  */
 export const MONTHLY_ABSENTEEISM_TRENDS = [
-  { month: 'May 2026', totalWorkdays: 520, absences: 24, tardinessMinutes: 1240, absenteeismRate: 4.6, economicLoss: 4120.00 },
-  { month: 'Jun 2026', totalWorkdays: 540, absences: 21, tardinessMinutes: 1110, absenteeismRate: 3.9, economicLoss: 3840.50 },
-  { month: 'Jul 2026', totalWorkdays: 530, absences: 26, tardinessMinutes: 1350, absenteeismRate: 4.9, economicLoss: 4610.20 },
-  { month: 'Ago 2026', totalWorkdays: 550, absences: 18, tardinessMinutes: 980, absenteeismRate: 3.3, economicLoss: 3290.80 },
-  { month: 'Sep 2026', totalWorkdays: 560, absences: 14, tardinessMinutes: 820, absenteeismRate: 2.5, economicLoss: 2840.00 },
-  { month: 'Oct 2026 (En Curso)', totalWorkdays: 560, absences: 8, tardinessMinutes: 818, absenteeismRate: 2.1, economicLoss: 3228.90 },
+  { month: 'May 2026', totalWorkdays: 520, absences: 24, tardinessMinutes: 1240, absenteeismRate: 4.6, lostHours: 212.7 },
+  { month: 'Jun 2026', totalWorkdays: 540, absences: 21, tardinessMinutes: 1110, absenteeismRate: 3.9, lostHours: 186.5 },
+  { month: 'Jul 2026', totalWorkdays: 530, absences: 26, tardinessMinutes: 1350, absenteeismRate: 4.9, lostHours: 230.5 },
+  { month: 'Ago 2026', totalWorkdays: 550, absences: 18, tardinessMinutes: 980, absenteeismRate: 3.3, lostHours: 160.3 },
+  { month: 'Sep 2026', totalWorkdays: 560, absences: 14, tardinessMinutes: 820, absenteeismRate: 2.5, lostHours: 125.7 },
+  { month: 'Oct 2026', totalWorkdays: 580, absences: 12, tardinessMinutes: 710, absenteeismRate: 2.1, lostHours: 107.8 },
 ];
 
 /**

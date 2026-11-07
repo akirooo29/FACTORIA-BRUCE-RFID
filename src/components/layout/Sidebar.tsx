@@ -10,10 +10,9 @@ import {
   Building,
   BarChart3,
   TrendingDown,
-  DollarSign,
   Gauge,
-  Calculator,
   ShieldCheck,
+  Activity,
 } from 'lucide-react';
 
 export const Sidebar: React.FC = () => {
@@ -41,10 +40,10 @@ export const Sidebar: React.FC = () => {
     },
     {
       id: 'economic_impact',
-      label: 'Impacto Económico',
-      icon: DollarSign,
-      badge: 'Financiero',
-      description: 'Cálculo referencial de pérdidas por tardanzas',
+      label: 'Horas-Hombre Perdidas',
+      icon: Clock,
+      badge: 'Productividad',
+      description: 'Auditoría de tiempo no laborado por tardanzas y ausencias',
     },
     {
       id: 'incidences',
@@ -66,6 +65,13 @@ export const Sidebar: React.FC = () => {
       icon: Clock,
       badge: attendanceLogs.length.toString(),
       description: 'Auditoría de lecturas RFID UHF en tiempo real',
+    },
+    {
+      id: 'radar-ia',
+      label: 'Radar IA',
+      icon: Activity,
+      badge: 'ML.NET',
+      description: 'Análisis predictivo de fatiga y sobrecarga laboral',
     },
   ];
 
@@ -100,18 +106,18 @@ export const Sidebar: React.FC = () => {
       description: 'Permisos, descansos médicos y vacaciones 365d',
     },
     {
-      id: 'payroll_deductions',
-      label: 'Cálculo de Descuentos',
-      icon: Calculator,
-      badge: 'Planilla',
-      description: 'Descuentos referenciales por minuto de tardanza',
-    },
-    {
       id: 'effectiveness',
       label: 'Efectividad Individual',
       icon: Gauge,
       badge: null,
       description: 'Evaluación mensual de efectividad por trabajador',
+    },
+    {
+      id: 'radar-ia',
+      label: 'Radar IA',
+      icon: Activity,
+      badge: 'ML.NET',
+      description: 'Análisis predictivo de fatiga y sobrecarga laboral',
     },
   ];
 

@@ -58,7 +58,7 @@ export const AttendanceVsAbsenceChart: React.FC<AttendanceVsAbsenceChartProps> =
         </div>
 
         <span className="text-[11px] font-mono font-semibold text-slate-500 bg-slate-50 px-2.5 py-1 rounded-md border border-slate-200 self-start sm:self-auto">
-          6 Áreas Auditadas
+          {data.length} {data.length === 1 ? 'Área Auditada' : 'Áreas Auditadas'}
         </span>
       </div>
 

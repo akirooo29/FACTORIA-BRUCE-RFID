@@ -33,8 +33,8 @@ export const MonthlyAbsenteeismChart: React.FC = () => {
             <span className="font-mono text-amber-600">{item.tardinessMinutes} min</span>
           </div>
           <div className="flex items-center justify-between gap-4 pt-1 border-t border-slate-100">
-            <span className="text-slate-600 font-semibold">Pérdida Económica:</span>
-            <strong className="font-mono text-slate-900">S/. {item.economicLoss.toLocaleString('es-PE')}</strong>
+            <span className="text-slate-600 font-semibold flex items-center gap-1">⏱️ Horas Perdidas:</span>
+            <strong className="font-mono text-slate-900">{item.lostHours} hrs</strong>
           </div>
         </div>
       );

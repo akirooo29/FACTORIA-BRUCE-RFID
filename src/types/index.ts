@@ -10,6 +10,12 @@ export interface AdminUser {
   department: string;
 }
 
+export interface LoginResult {
+  success: boolean;
+  message?: string;
+  user?: AdminUser;
+}
+
 export type WorkerStatus = 'ACTIVO' | 'INACTIVO' | 'EN_OBSERVACION';
 
 export type ScanType = 'ENTRADA' | 'SALIDA';
@@ -29,7 +35,10 @@ export type AttendancePunctuality =
   | 'PUERTA_CERRADA'
   | 'FALTA'
   | 'JUSTIFICADO'
-  | 'VACACIONES';
+  | 'VACACIONES'
+  | 'PENDIENTE'
+  | 'NO_VINCULADO'
+  | 'PRE_INGRESO';
 
 export type ThemeMode = 'light';
 
@@ -60,6 +69,8 @@ export interface Worker {
   id: number;
   code: string;
   name: string;
+  nombres?: string;
+  apellidos?: string;
   dni: string;
   email: string;
   phone: string;
@@ -69,7 +80,6 @@ export interface Worker {
   rfidTag: string;
   status: WorkerStatus;
   avatarUrl: string;
-  baseSalary?: number; // Sueldo Base opcional (oculto por defecto para cálculos de BI)
   
   // Configuración de Horario
   scheduleType?: 'ESTANDAR' | 'PERSONALIZADO';
@@ -142,11 +152,9 @@ export interface WorkerMonthlyStats {
   leavesCount: number; // Cantidad de permisos tomados
   leavesPercentageOfMonth: number; // % del mes que representan los permisos
   effectivenessPercentage: number;
-  baseSalary: number;
-  calculatedSalary: number;
-  salaryDeduction: number;
-  tardyDeduction: number;
-  absenceDeduction: number;
+  lostHoursFromTardiness: number; // Horas perdidas por tardanzas
+  lostHoursFromAbsence: number;   // Horas perdidas por faltas (8h por falta)
+  lostManHours: number;           // Total Horas-Hombre perdidas
   dailyLogs: DailyAttendanceSummary[];
 }
 
@@ -222,7 +230,7 @@ export interface DepartmentIncidence {
   justified: number;
   totalWorkers: number;
   totalDelayMinutes: number;
-  economicDeductionImpact: number;
+  lostManHours: number;
   punctualityRate: number;
 }
 
@@ -234,10 +242,9 @@ export interface MonthlyPunctualitySummary {
   totalEvaluations: number;
 }
 
-export interface MonthlyEconomicImpact {
-  totalEstimatedDeduction: number; // S/. acumulado del mes
+export interface MonthlyLostHoursImpact {
+  totalLostManHours: number;       // Horas-Hombre totales perdidas
   totalDelayMinutes: number;       // Minutos totales de tardanza
-  tardinessImpactCost: number;     // S/. por tardanza
-  absenteeismImpactCost: number;   // S/. por inasistencia
-  costPerMinuteAverage: number;    // Promedio de S/. / minuto
+  lostHoursFromTardiness: number;  // Horas por tardanza
+  lostHoursFromAbsence: number;    // Horas por inasistencia (8h por falta)
 }

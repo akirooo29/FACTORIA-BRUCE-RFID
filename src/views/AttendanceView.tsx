@@ -8,10 +8,17 @@ import {
   FileSpreadsheet,
   Check,
   ShieldCheck,
+  AlertTriangle,
+  RefreshCw,
 } from 'lucide-react';
 
 export const AttendanceView: React.FC = () => {
-  const { attendanceLogs } = useApp();
+  const {
+    attendanceLogs,
+    isLoadingAttendances,
+    attendancesError,
+    reloadAttendances,
+  } = useApp();
 
   const [searchTerm, setSearchTerm] = useState<string>('');
   const [typeFilter, setTypeFilter] = useState<'ALL' | WorkerType>('ALL');
@@ -43,6 +50,24 @@ export const AttendanceView: React.FC = () => {
 
   return (
     <div className="space-y-5 animate-fadeIn pb-8">
+      {/* Alerta de Error de Conexión */}
+      {attendancesError && (
+        <div className="p-4 bg-amber-50 border border-amber-200 rounded-xl text-amber-900 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs animate-fadeIn">
+          <div className="flex items-center gap-2">
+            <AlertTriangle className="w-4 h-4 text-amber-600 shrink-0" />
+            <span><strong>Aviso de conexión SQL Server (Asistencias):</strong> {attendancesError}</span>
+          </div>
+          <button
+            type="button"
+            onClick={() => reloadAttendances()}
+            className="flex items-center gap-1.5 px-3 py-1.5 bg-amber-600 text-white font-semibold rounded-lg hover:bg-amber-700 transition cursor-pointer self-start sm:self-auto shrink-0"
+          >
+            <RefreshCw className="w-3.5 h-3.5" />
+            <span>Reintentar Conexión</span>
+          </button>
+        </div>
+      )}
+
       {/* Header Corporativo */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-3 border-b border-slate-200">
         <div>
@@ -247,87 +272,119 @@ export const AttendanceView: React.FC = () => {
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100 font-medium">
-              {filteredLogs.map((log: AttendanceRecord) => (
-                <tr key={log.id} className="hover:bg-slate-50/80 transition-colors">
-                  {/* Timestamp */}
-                  <td className="py-3 px-4">
-                    <span className="font-mono font-bold text-slate-900 block">
-                      {log.timeFormatted}
-                    </span>
-                    <span className="text-[10px] text-slate-400">{log.dateFormatted}</span>
-                  </td>
-
-                  {/* Worker & Avatar */}
-                  <td className="py-3 px-4">
-                    <div className="flex items-center gap-2.5">
-                      <img
-                        src={log.avatarUrl}
-                        alt={log.workerName}
-                        className="w-8 h-8 rounded-lg object-cover border border-slate-200 shrink-0"
-                      />
-                      <div className="min-w-0">
-                        <span className="font-bold text-slate-900 block truncate max-w-[170px]">
-                          {log.workerName}
-                        </span>
-                        <span className="text-[10px] text-slate-500">{log.workerPosition}</span>
-                      </div>
+              {isLoadingAttendances ? (
+                <tr>
+                  <td colSpan={8} className="py-12 text-center text-slate-500">
+                    <div className="flex flex-col items-center justify-center gap-2">
+                      <div className="w-6 h-6 border-2 border-slate-800 border-t-transparent rounded-full animate-spin"></div>
+                      <span className="text-xs font-semibold">Cargando bitácora de asistencia desde SQL Server...</span>
                     </div>
                   </td>
-
-                  {/* Worker Type */}
-                  <td className="py-3 px-4">
-                    <Badge value={log.workerType} size="sm" />
-                  </td>
-
-                  {/* Scan Type */}
-                  <td className="py-3 px-4">
-                    <Badge value={log.scanType} size="sm" />
-                  </td>
-
-                  {/* Puntualidad */}
-                  <td className="py-3 px-4">
-                    {log.punctuality ? (
-                      <Badge value={log.punctuality} size="sm" />
-                    ) : (
-                      <span className="text-slate-400 text-[10px]">--</span>
-                    )}
-                  </td>
-
-                  {/* Tag */}
-                  <td className="py-3 px-4">
-                    <span className="font-mono text-[11px] text-slate-800 bg-slate-100 px-2 py-0.5 rounded border border-slate-300">
-                      {log.rfidTag}
-                    </span>
-                  </td>
-
-                  {/* Terminal */}
-                  <td className="py-3 px-4">
-                    <span className="text-slate-800 font-bold block">{log.terminalId}</span>
-                    <span className="text-[10px] text-slate-400">{log.terminalLocation.split('(')[1]?.replace(')', '') || log.terminalLocation}</span>
-                  </td>
-
-                  {/* Notas */}
-                  <td className="py-3 px-4 max-w-xs">
-                    {log.authorizedBy ? (
-                      <div className="space-y-0.5">
-                        <span className="inline-flex items-center gap-1 text-[10px] font-bold text-slate-900 bg-slate-100 px-2 py-0.5 rounded border border-slate-300">
-                          <ShieldCheck className="w-3 h-3 text-emerald-600" />
-                          Aprobado: {log.authorizedBy === 'JEFE_PLANTA' ? 'Jefe de Planta' : 'Gerencia'}
-                        </span>
-                        <p className="text-[10px] text-slate-500 truncate">Doc: {log.toleranceAuthorizationDoc}</p>
+                </tr>
+              ) : filteredLogs.length === 0 ? (
+                <tr>
+                  <td colSpan={8} className="py-12 text-center text-slate-500">
+                    {attendancesError ? (
+                      <div className="flex flex-col items-center justify-center gap-2 text-amber-700">
+                        <AlertTriangle className="w-6 h-6 text-amber-600" />
+                        <span className="text-xs font-semibold">No se pudo cargar la bitácora de asistencias de SQL Server.</span>
+                        <span className="text-[11px] text-slate-500 max-w-md">{attendancesError}</span>
+                        <button
+                          type="button"
+                          onClick={() => reloadAttendances()}
+                          className="mt-2 px-3 py-1 bg-slate-900 text-white rounded-md text-xs hover:bg-slate-800 cursor-pointer"
+                        >
+                          Reintentar conexión
+                        </button>
                       </div>
-                    ) : log.punctuality === 'TARDANZA_DESCUENTO' ? (
-                      <span className="text-[11px] font-mono text-slate-700 font-semibold">
-                        +{log.delayMinutes} min computable
-                      </span>
                     ) : (
-                      <span className="text-[11px] text-slate-500 truncate block">
-                        {log.notes || '--'}
-                      </span>
+                      <span className="text-xs">No se encontraron registros de asistencia en la base de datos SQL Server.</span>
                     )}
                   </td>
                 </tr>
-              ))}
+              ) : (
+                filteredLogs.map((log: AttendanceRecord) => (
+                  <tr key={log.id} className="hover:bg-slate-50/80 transition-colors">
+                    {/* Timestamp */}
+                    <td className="py-3 px-4">
+                      <span className="font-mono font-bold text-slate-900 block">
+                        {log.timeFormatted}
+                      </span>
+                      <span className="text-[10px] text-slate-400">{log.dateFormatted}</span>
+                    </td>
+
+                    {/* Worker & Avatar */}
+                    <td className="py-3 px-4">
+                      <div className="flex items-center gap-2.5">
+                        <img
+                          src={log.avatarUrl}
+                          alt={log.workerName}
+                          className="w-8 h-8 rounded-lg object-cover border border-slate-200 shrink-0"
+                        />
+                        <div className="min-w-0">
+                          <span className="font-bold text-slate-900 block truncate max-w-[170px]">
+                            {log.workerName}
+                          </span>
+                          <span className="text-[10px] text-slate-500">{log.workerPosition}</span>
+                        </div>
+                      </div>
+                    </td>
+
+                    {/* Worker Type */}
+                    <td className="py-3 px-4">
+                      <Badge value={log.workerType} size="sm" />
+                    </td>
+
+                    {/* Scan Type */}
+                    <td className="py-3 px-4">
+                      <Badge value={log.scanType} size="sm" />
+                    </td>
+
+                    {/* Puntualidad */}
+                    <td className="py-3 px-4">
+                      {log.punctuality ? (
+                        <Badge value={log.punctuality} size="sm" />
+                      ) : (
+                        <span className="text-slate-400 text-[10px]">--</span>
+                      )}
+                    </td>
+
+                    {/* Tag */}
+                    <td className="py-3 px-4">
+                      <span className="font-mono text-[11px] text-slate-800 bg-slate-100 px-2 py-0.5 rounded border border-slate-300">
+                        {log.rfidTag}
+                      </span>
+                    </td>
+
+                    {/* Terminal */}
+                    <td className="py-3 px-4">
+                      <span className="text-slate-800 font-bold block">{log.terminalId}</span>
+                      <span className="text-[10px] text-slate-400">{log.terminalLocation.split('(')[1]?.replace(')', '') || log.terminalLocation}</span>
+                    </td>
+
+                    {/* Notas */}
+                    <td className="py-3 px-4 max-w-xs">
+                      {log.authorizedBy ? (
+                        <div className="space-y-0.5">
+                          <span className="inline-flex items-center gap-1 text-[10px] font-bold text-slate-900 bg-slate-100 px-2 py-0.5 rounded border border-slate-300">
+                            <ShieldCheck className="w-3 h-3 text-emerald-600" />
+                            Aprobado: {log.authorizedBy === 'JEFE_PLANTA' ? 'Jefe de Planta' : 'Gerencia'}
+                          </span>
+                          <p className="text-[10px] text-slate-500 truncate">Doc: {log.toleranceAuthorizationDoc}</p>
+                        </div>
+                      ) : log.punctuality === 'TARDANZA_DESCUENTO' ? (
+                        <span className="text-[11px] font-mono text-slate-700 font-semibold">
+                          +{log.delayMinutes} min computable
+                        </span>
+                      ) : (
+                        <span className="text-[11px] text-slate-500 truncate block">
+                          {log.notes || '--'}
+                        </span>
+                      )}
+                    </td>
+                  </tr>
+                ))
+              )}
             </tbody>
           </table>
         </div>

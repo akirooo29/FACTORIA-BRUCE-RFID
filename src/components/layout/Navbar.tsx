@@ -178,14 +178,14 @@ export const Navbar: React.FC = () => {
           )}
         </div>
 
-        {/* Perfil de Usuario & Botón Cerrar Sesión */}
+        {/* Perfil de Usuario Dinámico & Botón Cerrar Sesión */}
         <div className="flex items-center gap-2 pl-2 border-l border-slate-200">
           <div className="hidden sm:flex flex-col text-right">
             <span className="text-xs font-bold text-slate-900 leading-tight">
-              {activeAdminUser.name}
+              {activeAdminUser?.name || (adminRole === 'GERENCIA' ? 'Carlos Pun Lay' : 'Mesías Mariños')}
             </span>
-            <span className="text-[10px] text-slate-500 font-medium">
-              {activeAdminUser.email}
+            <span className="text-[10px] text-slate-500 font-medium font-mono">
+              {activeAdminUser?.email || (adminRole === 'GERENCIA' ? 'cpunlay@grupobruce.com' : 'rrhh@grupobruce.com')}
             </span>
           </div>
 

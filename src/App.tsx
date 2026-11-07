@@ -13,6 +13,8 @@ import { PersonnelView } from './views/PersonnelView';
 import { AttendanceView } from './views/AttendanceView';
 import { RequestsView } from './views/RequestsView';
 import { PayrollDeductionsView } from './views/PayrollDeductionsView';
+import { AiFatigueRadarView } from './views/AiFatigueRadarView';
+import { AiCopilotBar } from './components/AiCopilotBar';
 
 const MainLayout: React.FC = () => {
   const { currentView, adminRole } = useApp();
@@ -39,9 +41,12 @@ const MainLayout: React.FC = () => {
       case 'payroll_deductions':
         return <PayrollDeductionsView />;
 
-      // Vistas Compartidas de Auditoría
+      // Vistas Compartidas de Auditoría y ML
       case 'effectiveness':
         return <EffectivenessDashboardView />;
+      case 'radar-ia':
+      case 'radar_ia':
+        return <AiFatigueRadarView />;
 
       default:
         return adminRole === 'GERENCIA' ? <ExecutiveBiDashboardView /> : <DashboardView />;
@@ -62,13 +67,16 @@ const MainLayout: React.FC = () => {
         <main className="flex-1 p-4 sm:p-6 max-w-7xl w-full mx-auto">
           {renderActiveView()}
         </main>
+
+        {/* AI Copilot flotante estilo Spotlight / Raycast */}
+        <AiCopilotBar />
       </div>
     </div>
   );
 };
 
 const AppContent: React.FC = () => {
-  const { isAuthenticated, login } = useApp();
+  const { isAuthenticated } = useApp();
   // Splash Screen activo por defecto al cargar la app durante 1.2 segundos
   const [showSplash, setShowSplash] = useState<boolean>(true);
 
@@ -77,7 +85,7 @@ const AppContent: React.FC = () => {
   }
 
   if (!isAuthenticated) {
-    return <LoginView onLoginSuccess={(email, role) => login(email, role)} />;
+    return <LoginView />;
   }
 
   return <MainLayout />;

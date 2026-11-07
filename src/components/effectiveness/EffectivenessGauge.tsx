@@ -1,13 +1,8 @@
 import React from 'react';
-import { DollarSign, ShieldCheck } from 'lucide-react';
+import { Clock, ShieldCheck } from 'lucide-react';
 
 interface EffectivenessGaugeProps {
   effectivenessPercentage: number;
-  baseSalary: number;
-  salaryDeduction: number;
-  tardyDeduction: number;
-  absenceDeduction: number;
-  calculatedSalary: number;
   punctualDays: number;
   tardyDays: number;
   absentDays: number;
@@ -17,17 +12,16 @@ interface EffectivenessGaugeProps {
 
 export const EffectivenessGauge: React.FC<EffectivenessGaugeProps> = ({
   effectivenessPercentage,
-  baseSalary,
-  salaryDeduction,
-  tardyDeduction,
-  absenceDeduction,
-  calculatedSalary,
   punctualDays,
   tardyDays,
   absentDays,
   justifiedDays,
   totalDelayMinutes,
 }) => {
+  const lostHoursFromTardiness = Math.round((totalDelayMinutes / 60) * 10) / 10;
+  const lostHoursFromAbsence = absentDays * 8;
+  const totalLostManHours = Math.round((lostHoursFromTardiness + lostHoursFromAbsence) * 10) / 10;
+
   // SVG Radial Circle Calculation
   const radius = 78;
   const circumference = 2 * Math.PI * radius;
@@ -158,55 +152,40 @@ export const EffectivenessGauge: React.FC<EffectivenessGaugeProps> = ({
         </div>
       </div>
 
-      {/* Salary Settlement Calculation Box */}
+      {/* Time Audit Calculation Box */}
       <div className="p-4 rounded-lg bg-slate-50 border border-slate-200 space-y-2.5 text-xs">
         <div className="flex items-center justify-between pb-2 border-b border-slate-200">
           <div className="flex items-center gap-1.5 font-bold text-slate-800">
-            <DollarSign className="w-4 h-4" />
-            <span>Liquidación Salarial Mensual</span>
+            <Clock className="w-4 h-4 text-slate-700" />
+            <span>Auditoría de Tiempo Laboral</span>
           </div>
-          <span className="text-[10px] font-mono text-slate-500 bg-slate-200 px-2 py-0.5 rounded font-semibold">
-            Fórmula Legal
-          </span>
-        </div>
-
-        <div className="flex items-center justify-between text-slate-600">
-          <span>Sueldo Base Registrado:</span>
-          <span className="font-mono font-bold text-slate-900">
-            S/ {baseSalary.toLocaleString('es-PE', { minimumFractionDigits: 2 })}
+          <span className="text-[10px] font-mono text-slate-600 bg-slate-200 px-2 py-0.5 rounded font-semibold">
+            Jornada 8h
           </span>
         </div>
 
         <div className="flex items-center justify-between text-slate-600">
           <span className="flex items-center gap-1">
-            Descuento Tardanzas ({totalDelayMinutes} min):
-            <span className="text-[10px] text-slate-400" title="[Sueldo / 8h / 60min]">[S/8h/60m]</span>
+            Tiempo perdido por tardanzas ({totalDelayMinutes} min):
           </span>
-          <span className="font-mono font-semibold text-slate-900">
-            - S/ {tardyDeduction.toLocaleString('es-PE', { minimumFractionDigits: 2 })}
+          <span className="font-mono font-semibold text-amber-700">
+            ⏱️ -{lostHoursFromTardiness} hrs
           </span>
         </div>
 
         <div className="flex items-center justify-between text-slate-600">
-          <span>Descuento Inasistencias ({absentDays} días):</span>
-          <span className="font-mono font-semibold text-slate-900">
-            - S/ {absenceDeduction.toLocaleString('es-PE', { minimumFractionDigits: 2 })}
+          <span>Tiempo no laborado por faltas ({absentDays} días):</span>
+          <span className="font-mono font-semibold text-rose-700">
+            ⏱️ -{lostHoursFromAbsence} hrs
           </span>
         </div>
 
-        {salaryDeduction > 0 && (
-          <div className="flex items-center justify-between text-slate-500 text-xs pt-1 border-t border-dashed border-slate-200">
-            <span>Total Deducciones:</span>
-            <span className="font-mono font-semibold text-slate-900">
-              - S/ {salaryDeduction.toLocaleString('es-PE', { minimumFractionDigits: 2 })}
-            </span>
-          </div>
-        )}
-
         <div className="pt-2 border-t border-slate-200 flex items-center justify-between">
-          <span className="font-bold text-slate-900">Remuneración Computable:</span>
+          <span className="font-bold text-slate-900 flex items-center gap-1">
+            ⏱️ Total Horas-Hombre Perdidas:
+          </span>
           <span className="font-mono text-base font-bold text-slate-900">
-            S/ {calculatedSalary.toLocaleString('es-PE', { minimumFractionDigits: 2 })}
+            {totalLostManHours} hrs
           </span>
         </div>
       </div>

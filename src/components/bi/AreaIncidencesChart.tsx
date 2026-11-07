@@ -9,18 +9,22 @@ import {
   Tooltip,
 } from 'recharts';
 import { AlertTriangle } from 'lucide-react';
-import { DEPARTMENT_BI_DATA } from '../../data/mockData';
+import type { DepartmentIncidence } from '../../types';
 
-export const AreaIncidencesChart: React.FC = () => {
+interface AreaIncidencesChartProps {
+  data?: DepartmentIncidence[];
+}
+
+export const AreaIncidencesChart: React.FC<AreaIncidencesChartProps> = ({ data = [] }) => {
   // Ordenar áreas de mayor a menor según incidencias totales (tardanzas + faltas)
-  const sortedData = [...DEPARTMENT_BI_DATA]
+  const sortedData = [...data]
     .map((dept) => ({
       name: dept.department.replace('&', '+').replace('Seguridad y Medio Ambiente (HSE)', 'HSE'),
       totalIncidences: dept.tardiness + dept.absences,
       tardiness: dept.tardiness,
       absences: dept.absences,
       delayMinutes: dept.totalDelayMinutes,
-      economicImpact: dept.economicDeductionImpact,
+      lostManHours: dept.lostManHours,
     }))
     .sort((a, b) => b.totalIncidences - a.totalIncidences);
 
@@ -47,8 +51,8 @@ export const AreaIncidencesChart: React.FC = () => {
             <span className="font-mono font-bold">{item.delayMinutes} min</span>
           </div>
           <div className="flex items-center justify-between gap-4">
-            <span className="text-slate-600">Impacto Económico:</span>
-            <strong className="font-mono text-slate-900">S/. {item.economicImpact.toLocaleString('es-PE')}</strong>
+            <span className="text-slate-600 flex items-center gap-1">⏱️ Horas-Hombre Perdidas:</span>
+            <strong className="font-mono text-slate-900">{item.lostManHours} hrs</strong>
           </div>
         </div>
       );

@@ -22,16 +22,16 @@ import {
   Trash2,
   AlertTriangle,
   Calendar,
-  Eye,
-  EyeOff,
   CheckCircle2,
   Clock,
-  Calculator,
 } from 'lucide-react';
 
 export const PersonnelView: React.FC = () => {
   const {
     workers,
+    isLoadingWorkers,
+    workersError,
+    reloadWorkers,
     addWorker,
     updateWorker,
     deleteWorker,
@@ -42,7 +42,6 @@ export const PersonnelView: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState<string>('');
   const [typeFilter, setTypeFilter] = useState<'ALL' | WorkerType>('ALL');
   const [departmentFilter, setDepartmentFilter] = useState<string>('ALL');
-  const [showConfidentialSalaries, setShowConfidentialSalaries] = useState<boolean>(false);
 
   // Modales
   const [selectedWorker, setSelectedWorker] = useState<Worker | null>(null);
@@ -51,21 +50,19 @@ export const PersonnelView: React.FC = () => {
   const [showAddModal, setShowAddModal] = useState<boolean>(false);
   const [notificationMsg, setNotificationMsg] = useState<string | null>(null);
 
-  // Toggle de visibilidad de sueldo dentro de modales
-  const [showSalaryInModal, setShowSalaryInModal] = useState<boolean>(false);
-
-  // Estado para el formulario de Nuevo Colaborador
+  // Estado para el formulario de Nuevo Colaborador con Nombres y Apellidos separados
   const [newWorker, setNewWorker] = useState({
     name: '',
+    nombres: '',
+    apellidos: '',
     dni: '',
     email: '',
     phone: '',
-    type: 'TRABAJADOR_REGULAR' as WorkerType,
+    type: 'EMPLEADO_INTERNO' as WorkerType,
     department: 'Operaciones & Planta',
     position: '',
     rfidTag: 'RFID-100201',
     status: 'ACTIVO' as Worker['status'],
-    baseSalary: 3500,
     avatarUrl: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=150&auto=format&fit=crop&q=80',
     fecha_ingreso: new Date().toISOString().split('T')[0],
     contractorCompany: '',
@@ -76,8 +73,8 @@ export const PersonnelView: React.FC = () => {
     customSchedule: DEFAULT_PRACTICANTE_SCHEDULE,
   });
 
-  // Estado temporal para edición
-  const [editForm, setEditForm] = useState<Partial<Worker>>({});
+  // Estado temporal para edición con Nombres y Apellidos
+  const [editForm, setEditForm] = useState<Partial<Worker> & { nombres?: string; apellidos?: string }>({});
 
   const showToast = (msg: string) => {
     setNotificationMsg(msg);
@@ -98,6 +95,7 @@ export const PersonnelView: React.FC = () => {
     const matchesType =
       typeFilter === 'ALL' ||
       w.type === typeFilter ||
+      (typeFilter === 'EMPLEADO_INTERNO' && (w.type === 'TRABAJADOR_REGULAR' || (w.type as string) === 'OPERARIO')) ||
       (typeFilter === 'TRABAJADOR_REGULAR' && w.type === 'EMPLEADO_INTERNO');
 
     const matchesDept = departmentFilter === 'ALL' || w.department === departmentFilter;
@@ -108,21 +106,31 @@ export const PersonnelView: React.FC = () => {
   // Handlers CRUD
   const handleCreateWorker = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!newWorker.name || !newWorker.dni || !newWorker.position) return;
+    const cleanNombres = newWorker.nombres.trim();
+    const cleanApellidos = newWorker.apellidos.trim();
+
+    if (!cleanNombres || !cleanApellidos || !newWorker.dni || !newWorker.position) return;
 
     const fechaIngresoFinal = newWorker.fecha_ingreso || new Date().toISOString().split('T')[0];
     const daysEmployed = calculateWorkedDays(fechaIngresoFinal);
-    const vacationDays = newWorker.type === 'TRABAJADOR_REGULAR' && daysEmployed >= 365 ? 30 : 0;
+    const isInternal = newWorker.type === 'EMPLEADO_INTERNO' || (newWorker.type as string) === 'TRABAJADOR_REGULAR';
+    const vacationDays = isInternal && daysEmployed >= 365 ? 30 : 0;
 
     let codePrefix = 'FBR';
     if (newWorker.type === 'CONTRATISTA') codePrefix = 'CNT';
     if (newWorker.type === 'PRACTICANTE') codePrefix = 'PRC';
 
+    const fullName = `${cleanNombres} ${cleanApellidos}`.trim();
+
     await addWorker({
       code: `${codePrefix}-${Math.floor(1000 + Math.random() * 9000)}`,
-      name: newWorker.name,
+      name: fullName,
+      nombres: cleanNombres,
+      apellidos: cleanApellidos,
+      Nombres: cleanNombres,
+      Apellidos: cleanApellidos,
       dni: newWorker.dni,
-      email: newWorker.email || `${newWorker.name.toLowerCase().replace(/\s+/g, '.')}@factoriabruce.com`,
+      email: newWorker.email || `${cleanNombres.toLowerCase().replace(/\s+/g, '.')}.${cleanApellidos.toLowerCase().replace(/\s+/g, '.')}@factoriabruce.com`,
       phone: newWorker.phone || '+51 900 000 000',
       type: newWorker.type,
       department: newWorker.department,
@@ -130,7 +138,6 @@ export const PersonnelView: React.FC = () => {
       rfidTag: newWorker.rfidTag,
       status: 'ACTIVO',
       avatarUrl: newWorker.avatarUrl,
-      baseSalary: newWorker.baseSalary ? Number(newWorker.baseSalary) : undefined,
       fecha_ingreso: fechaIngresoFinal,
       hireDate: fechaIngresoFinal,
       vacationDaysAvailable: vacationDays,
@@ -140,22 +147,23 @@ export const PersonnelView: React.FC = () => {
       contractExpiry: newWorker.type === 'CONTRATISTA' ? newWorker.contractExpiry : undefined,
       sctrStatus: newWorker.type === 'CONTRATISTA' ? newWorker.sctrStatus : undefined,
       projectAssigned: newWorker.type === 'CONTRATISTA' ? newWorker.projectAssigned : undefined,
-    });
+    } as any);
 
     setShowAddModal(false);
-    showToast(`Colaborador ${newWorker.name} registrado con éxito.`);
+    showToast(`Colaborador ${fullName} registrado con éxito.`);
     // Reset
     setNewWorker({
       name: '',
+      nombres: '',
+      apellidos: '',
       dni: '',
       email: '',
       phone: '',
-      type: 'TRABAJADOR_REGULAR',
+      type: 'EMPLEADO_INTERNO',
       department: 'Operaciones & Planta',
       position: '',
       rfidTag: `RFID-${Math.floor(100000 + Math.random() * 900000)}`,
       status: 'ACTIVO',
-      baseSalary: 3500,
       avatarUrl: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=150&auto=format&fit=crop&q=80',
       fecha_ingreso: new Date().toISOString().split('T')[0],
       contractorCompany: '',
@@ -169,24 +177,58 @@ export const PersonnelView: React.FC = () => {
 
   const handleOpenEdit = (worker: Worker) => {
     setEditingWorker(worker);
+    const parts = (worker.name || '').trim().split(/\s+/);
+    const rawNombres = (worker as any).nombres || (worker as any).Nombres;
+    const rawApellidos = (worker as any).apellidos || (worker as any).Apellidos;
+
+    let nombres = rawNombres || '';
+    let apellidos = rawApellidos || '';
+
+    if (!nombres && !apellidos) {
+      if (parts.length > 2) {
+        nombres = parts.slice(0, 2).join(' ');
+        apellidos = parts.slice(2).join(' ');
+      } else if (parts.length === 2) {
+        nombres = parts[0];
+        apellidos = parts[1];
+      } else {
+        nombres = parts[0] || '';
+        apellidos = '';
+      }
+    }
+
     setEditForm({
       ...worker,
+      nombres,
+      apellidos,
+      type: worker.type === 'TRABAJADOR_REGULAR' ? 'EMPLEADO_INTERNO' : worker.type,
       customSchedule: worker.customSchedule || DEFAULT_PRACTICANTE_SCHEDULE,
     });
-    setShowSalaryInModal(false);
   };
 
   const handleSaveEdit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!editingWorker) return;
 
+    const cleanNombres = (editForm.nombres || '').trim();
+    const cleanApellidos = (editForm.apellidos || '').trim();
+    const fullName = cleanNombres && cleanApellidos
+      ? `${cleanNombres} ${cleanApellidos}`.trim()
+      : (cleanNombres || editForm.name || editingWorker.name);
+
     await updateWorker(editingWorker.id, {
       ...editForm,
+      name: fullName,
+      nombres: cleanNombres || undefined,
+      apellidos: cleanApellidos || undefined,
+      Nombres: cleanNombres || undefined,
+      Apellidos: cleanApellidos || undefined,
       scheduleType: editForm.type === 'PRACTICANTE' ? 'PERSONALIZADO' : 'ESTANDAR',
-    });
+      customSchedule: editForm.type === 'PRACTICANTE' ? editForm.customSchedule : undefined,
+    } as any);
 
     setEditingWorker(null);
-    showToast(`Datos de ${editForm.name} actualizados correctamente.`);
+    showToast(`Datos de ${fullName} actualizados correctamente.`);
   };
 
   const handleConfirmDelete = async () => {
@@ -211,6 +253,23 @@ export const PersonnelView: React.FC = () => {
         </div>
       )}
 
+      {/* Alerta de Error de Conexión a Base de Datos */}
+      {workersError && (
+        <div className="p-4 bg-amber-50 border border-amber-200 rounded-xl text-amber-900 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs animate-fadeIn">
+          <div className="flex items-center gap-2">
+            <AlertTriangle className="w-4 h-4 text-amber-600 shrink-0" />
+            <span><strong>Aviso de conexión SQL Server:</strong> {workersError}</span>
+          </div>
+          <button
+            type="button"
+            onClick={() => reloadWorkers()}
+            className="px-3 py-1.5 bg-amber-600 text-white font-semibold rounded-lg hover:bg-amber-700 transition cursor-pointer self-start sm:self-auto shrink-0"
+          >
+            Reintentar Conexión
+          </button>
+        </div>
+      )}
+
       {/* Header Corporativo */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-3 border-b border-slate-200">
         <div>
@@ -228,27 +287,9 @@ export const PersonnelView: React.FC = () => {
         </div>
 
         <div className="flex flex-wrap items-center gap-2.5">
-          {/* Toggle de Visualización de Sueldos Confidenciales */}
           <button
             type="button"
-            onClick={() => setShowConfidentialSalaries(!showConfidentialSalaries)}
-            className={`flex items-center gap-1.5 px-3 py-2 rounded-lg border text-xs font-semibold transition-colors cursor-pointer ${
-              showConfidentialSalaries
-                ? 'bg-amber-50 text-amber-900 border-amber-300'
-                : 'bg-white text-slate-700 border-slate-300 hover:bg-slate-50'
-            }`}
-            title="Mostrar u ocultar los sueldos base para cálculo de BI"
-          >
-            {showConfidentialSalaries ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
-            <span>{showConfidentialSalaries ? 'Ocultar Sueldos Base' : 'Mostrar Sueldos Base'}</span>
-          </button>
-
-          <button
-            type="button"
-            onClick={() => {
-              setShowAddModal(true);
-              setShowSalaryInModal(false);
-            }}
+            onClick={() => setShowAddModal(true)}
             className="flex items-center gap-2 px-3.5 py-2 bg-slate-900 hover:bg-slate-800 text-white text-xs font-bold rounded-lg shadow-xs transition-colors cursor-pointer"
           >
             <UserPlus className="w-4 h-4" />
@@ -331,23 +372,46 @@ export const PersonnelView: React.FC = () => {
                 <th className="py-3 px-3">Tipo & Condición</th>
                 <th className="py-3 px-3">Área / Posición</th>
                 <th className="py-3 px-3">Régimen Horario</th>
-                {showConfidentialSalaries && (
-                  <th className="py-3 px-3 text-right">Sueldo Base (BI)</th>
-                )}
                 <th className="py-3 px-3">Tag RFID</th>
                 <th className="py-3 px-4 text-center">Acciones</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100 text-slate-800 font-medium">
-              {filteredWorkers.map((worker) => {
+              {isLoadingWorkers ? (
+                <tr>
+                  <td colSpan={7} className="py-12 text-center text-slate-500">
+                    <div className="flex flex-col items-center justify-center gap-2">
+                      <div className="w-6 h-6 border-2 border-slate-800 border-t-transparent rounded-full animate-spin"></div>
+                      <span className="text-xs font-semibold">Cargando colaboradores desde la base de datos SQL Server...</span>
+                    </div>
+                  </td>
+                </tr>
+              ) : filteredWorkers.length === 0 ? (
+                <tr>
+                  <td colSpan={7} className="py-12 text-center text-slate-500">
+                    {workersError ? (
+                      <div className="flex flex-col items-center justify-center gap-2 text-amber-700">
+                        <AlertTriangle className="w-6 h-6 text-amber-600" />
+                        <span className="text-xs font-semibold">No se pudo cargar la lista de trabajadores de SQL Server.</span>
+                        <span className="text-[11px] text-slate-500 max-w-md">{workersError}</span>
+                        <button
+                          type="button"
+                          onClick={() => reloadWorkers()}
+                          className="mt-2 px-3 py-1 bg-slate-900 text-white rounded-md text-xs hover:bg-slate-800 cursor-pointer"
+                        >
+                          Reintentar conexión
+                        </button>
+                      </div>
+                    ) : (
+                      <span className="text-xs">No se encontraron colaboradores que coincidan con la búsqueda.</span>
+                    )}
+                  </td>
+                </tr>
+              ) : (
+                filteredWorkers.map((worker) => {
                 const isPracticante = worker.type === 'PRACTICANTE';
                 const isContratista = worker.type === 'CONTRATISTA';
                 const isRegular = worker.type === 'TRABAJADOR_REGULAR' || worker.type === 'EMPLEADO_INTERNO';
-
-                // Costo por minuto (Fórmula: Sueldo / 8h / 60min)
-                const costPerMinute = worker.baseSalary
-                  ? Math.round(((worker.baseSalary / 30) / (8 * 60)) * 1000) / 1000
-                  : null;
 
                 return (
                   <tr key={worker.id} className="hover:bg-slate-50/80 transition-colors">
@@ -431,24 +495,6 @@ export const PersonnelView: React.FC = () => {
                       )}
                     </td>
 
-                    {/* Sueldo Base Opcional (Confidencial BI) */}
-                    {showConfidentialSalaries && (
-                      <td className="py-3 px-3 text-right font-mono">
-                        {worker.baseSalary ? (
-                          <div>
-                            <span className="font-bold text-slate-900">
-                              S/. {worker.baseSalary.toLocaleString('es-PE')}
-                            </span>
-                            <span className="block text-[10px] text-slate-400">
-                              S/. {costPerMinute}/min
-                            </span>
-                          </div>
-                        ) : (
-                          <span className="text-slate-400 text-[11px]">No asignado</span>
-                        )}
-                      </td>
-                    )}
-
                     {/* RFID Tag */}
                     <td className="py-3 px-3">
                       <span className="font-mono text-[11px] px-2 py-0.5 rounded bg-slate-100 border border-slate-200 text-slate-800">
@@ -487,7 +533,8 @@ export const PersonnelView: React.FC = () => {
                     </td>
                   </tr>
                 );
-              })}
+              })
+            )}
             </tbody>
           </table>
         </div>
@@ -496,7 +543,7 @@ export const PersonnelView: React.FC = () => {
       {/* MODAL 1: REGISTRAR NUEVO COLABORADOR */}
       {showAddModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-xs animate-fadeIn">
-          <div className="relative w-full max-w-2xl bg-white border border-slate-300 rounded-2xl shadow-xl p-6 text-slate-900 max-h-[92vh] overflow-y-auto">
+          <div className="relative w-full max-w-2xl bg-white border border-slate-300 rounded-2xl shadow-xl p-6 text-slate-900 max-h-[90vh] overflow-y-auto">
             <div className="flex items-start justify-between pb-3 mb-4 border-b border-slate-200">
               <div className="flex items-center gap-2.5">
                 <span className="p-2 rounded-xl bg-slate-900 text-white shadow-xs">
@@ -521,12 +568,14 @@ export const PersonnelView: React.FC = () => {
             </div>
 
             <form onSubmit={handleCreateWorker} className="space-y-4 text-xs">
-              {/* Select con las tres opciones requeridas */}
+              {/* Selector de Condición Laboral (Obligatorio) */}
               <div className="space-y-1.5">
-                <label className="block text-slate-800 font-bold">
-                  Tipo de Colaborador (Condición Laboral): *
+                <label htmlFor="new-worker-type" className="block text-slate-800 font-bold">
+                  Condición Laboral (Tipo de Colaborador): *
                 </label>
                 <select
+                  id="new-worker-type"
+                  required
                   value={newWorker.type}
                   onChange={(e) => {
                     const selected = e.target.value as WorkerType;
@@ -538,7 +587,7 @@ export const PersonnelView: React.FC = () => {
                   }}
                   className="w-full px-3 py-2.5 bg-slate-50 border border-slate-300 rounded-lg text-slate-900 font-semibold focus:outline-none focus:border-slate-900 cursor-pointer"
                 >
-                  <option value="TRABAJADOR_REGULAR">Trabajador (Regular)</option>
+                  <option value="EMPLEADO_INTERNO">Trabajador Interno</option>
                   <option value="CONTRATISTA">Contratista</option>
                   <option value="PRACTICANTE">Practicante</option>
                 </select>
@@ -546,9 +595,19 @@ export const PersonnelView: React.FC = () => {
 
               {/* LÓGICA CONDICIONAL DE HORARIOS Y BENEFICIOS */}
 
-              {/* 1. Trabajador Regular -> Horario Estándar */}
-              {newWorker.type === 'TRABAJADOR_REGULAR' && (
-                <div className="p-3.5 rounded-xl bg-slate-50 border border-slate-200 space-y-1.5">
+              {/* 1. Horario Dinámico para Practicantes */}
+              {newWorker.type === 'PRACTICANTE' && (
+                <div className="space-y-2 animate-fadeIn">
+                  <CustomScheduleEditor
+                    schedule={newWorker.customSchedule}
+                    onChange={(updated) => setNewWorker({ ...newWorker, customSchedule: updated })}
+                  />
+                </div>
+              )}
+
+              {/* 2. Trabajador Interno -> Horario Estándar */}
+              {(newWorker.type === 'EMPLEADO_INTERNO' || (newWorker.type as string) === 'TRABAJADOR_REGULAR') && (
+                <div className="p-3.5 rounded-xl bg-slate-50 border border-slate-200 space-y-1.5 animate-fadeIn">
                   <div className="flex items-center gap-2 font-bold text-slate-900 text-xs">
                     <Clock className="w-4 h-4 text-slate-700" />
                     <span>Horario Estándar de Planta (Factoría Bruce)</span>
@@ -562,9 +621,9 @@ export const PersonnelView: React.FC = () => {
                 </div>
               )}
 
-              {/* 2. Contratista -> Datos de la empresa proveedora */}
+              {/* 3. Contratista -> Datos de la empresa proveedora */}
               {newWorker.type === 'CONTRATISTA' && (
-                <div className="p-3.5 rounded-xl bg-amber-50/70 border border-amber-200 space-y-3">
+                <div className="p-3.5 rounded-xl bg-amber-50/70 border border-amber-200 space-y-3 animate-fadeIn">
                   <div className="flex items-center gap-2 font-bold text-amber-950 text-xs">
                     <HardHat className="w-4 h-4 text-amber-700" />
                     <span>Régimen Especial Contratista Externo</span>
@@ -600,24 +659,34 @@ export const PersonnelView: React.FC = () => {
                 </div>
               )}
 
-              {/* 3. Practicante -> Submódulo de Horario Personalizado */}
-              {newWorker.type === 'PRACTICANTE' && (
-                <CustomScheduleEditor
-                  schedule={newWorker.customSchedule}
-                  onChange={(updated) => setNewWorker({ ...newWorker, customSchedule: updated })}
-                />
-              )}
-
-              {/* Datos Generales */}
+              {/* Datos Generales con División de Nombres */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <div className="sm:col-span-2 space-y-1">
-                  <label className="font-semibold text-slate-700">Nombre Completo: *</label>
+                <div className="space-y-1">
+                  <label htmlFor="new-worker-nombres" className="font-semibold text-slate-700">
+                    Nombres: *
+                  </label>
                   <input
+                    id="new-worker-nombres"
                     type="text"
                     required
-                    value={newWorker.name}
-                    onChange={(e) => setNewWorker({ ...newWorker, name: e.target.value })}
-                    placeholder="Ej. Martín Ramos Quispe"
+                    value={newWorker.nombres}
+                    onChange={(e) => setNewWorker({ ...newWorker, nombres: e.target.value })}
+                    placeholder="Ej. Martín Alberto"
+                    className="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-lg text-slate-900 focus:outline-none focus:border-slate-900"
+                  />
+                </div>
+
+                <div className="space-y-1">
+                  <label htmlFor="new-worker-apellidos" className="font-semibold text-slate-700">
+                    Apellidos: *
+                  </label>
+                  <input
+                    id="new-worker-apellidos"
+                    type="text"
+                    required
+                    value={newWorker.apellidos}
+                    onChange={(e) => setNewWorker({ ...newWorker, apellidos: e.target.value })}
+                    placeholder="Ej. Ramos Quispe"
                     className="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-lg text-slate-900 focus:outline-none focus:border-slate-900"
                   />
                 </div>
@@ -685,49 +754,6 @@ export const PersonnelView: React.FC = () => {
                     className="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-lg text-slate-900 font-mono focus:outline-none focus:border-slate-900"
                   />
                 </div>
-
-                {/* CAMPO OPCIONAL: SUELDO BASE (OCULTO POR DEFECTO PARA CÁLCULO DE BI) */}
-                <div className="space-y-1 sm:col-span-2 p-3 rounded-xl bg-slate-50 border border-slate-200">
-                  <div className="flex items-center justify-between mb-1">
-                    <label className="font-bold text-slate-800 flex items-center gap-1.5">
-                      <Calculator className="w-3.5 h-3.5 text-slate-600" />
-                      <span>Sueldo Base Mensual (Opcional - Business Intelligence)</span>
-                    </label>
-                    <button
-                      type="button"
-                      onClick={() => setShowSalaryInModal(!showSalaryInModal)}
-                      className="text-xs font-semibold text-slate-600 hover:text-slate-900 flex items-center gap-1 cursor-pointer"
-                    >
-                      {showSalaryInModal ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
-                      <span>{showSalaryInModal ? 'Ocultar' : 'Ver Sueldo'}</span>
-                    </button>
-                  </div>
-
-                  <p className="text-[11px] text-slate-500 mb-2">
-                    Dato confidencial utilizado estrictamente en el módulo de BI para calcular el impacto económico: <strong>(Sueldo / 8h / 60min = costo por minuto de tardanza)</strong>.
-                  </p>
-
-                  <div className="relative">
-                    <input
-                      type={showSalaryInModal ? 'number' : 'password'}
-                      min="1025"
-                      step="50"
-                      value={newWorker.baseSalary || ''}
-                      onChange={(e) => setNewWorker({ ...newWorker, baseSalary: Number(e.target.value) })}
-                      placeholder="Ej. 3500.00"
-                      className="w-full px-3 py-2 bg-white border border-slate-300 rounded-lg text-slate-900 font-mono focus:outline-none focus:border-slate-900"
-                    />
-                  </div>
-
-                  {newWorker.baseSalary && showSalaryInModal && (
-                    <div className="mt-2 text-[11px] font-mono text-slate-600 bg-white p-2 rounded border border-slate-200 flex justify-between">
-                      <span>Costo referencial por minuto:</span>
-                      <strong className="text-slate-900">
-                        S/. {Math.round(((newWorker.baseSalary / 30) / (8 * 60)) * 1000) / 1000} / min
-                      </strong>
-                    </div>
-                  )}
-                </div>
               </div>
 
               {/* Botones */}
@@ -754,7 +780,7 @@ export const PersonnelView: React.FC = () => {
       {/* MODAL 2: EDITAR COLABORADOR */}
       {editingWorker && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-xs animate-fadeIn">
-          <div className="relative w-full max-w-2xl bg-white border border-slate-300 rounded-2xl shadow-xl p-6 text-slate-900 max-h-[92vh] overflow-y-auto">
+          <div className="relative w-full max-w-2xl bg-white border border-slate-300 rounded-2xl shadow-xl p-6 text-slate-900 max-h-[90vh] overflow-y-auto">
             <div className="flex items-start justify-between pb-3 mb-4 border-b border-slate-200">
               <div className="flex items-center gap-2.5">
                 <span className="p-2 rounded-xl bg-slate-900 text-white shadow-xs">
@@ -765,7 +791,7 @@ export const PersonnelView: React.FC = () => {
                     Modificar Ficha de {editingWorker.name}
                   </h3>
                   <p className="text-xs text-slate-500">
-                    Actualización de horarios, tipo de vinculación y parámetros salariales.
+                    Actualización de horarios, tipo de vinculación y datos del colaborador.
                   </p>
                 </div>
               </div>
@@ -779,17 +805,26 @@ export const PersonnelView: React.FC = () => {
             </div>
 
             <form onSubmit={handleSaveEdit} className="space-y-4 text-xs">
-              {/* Select Tipo */}
+              {/* Select Tipo / Condición Laboral (Obligatorio) */}
               <div className="space-y-1.5">
-                <label className="block text-slate-800 font-bold">
-                  Tipo de Colaborador: *
+                <label htmlFor="edit-worker-type" className="block text-slate-800 font-bold">
+                  Condición Laboral (Tipo de Colaborador): *
                 </label>
                 <select
-                  value={editForm.type || 'TRABAJADOR_REGULAR'}
-                  onChange={(e) => setEditForm({ ...editForm, type: e.target.value as WorkerType })}
-                  className="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-lg text-slate-900 font-semibold focus:outline-none focus:border-slate-900 cursor-pointer"
+                  id="edit-worker-type"
+                  required
+                  value={editForm.type === 'TRABAJADOR_REGULAR' ? 'EMPLEADO_INTERNO' : (editForm.type || 'EMPLEADO_INTERNO')}
+                  onChange={(e) => {
+                    const selected = e.target.value as WorkerType;
+                    setEditForm({
+                      ...editForm,
+                      type: selected,
+                      scheduleType: selected === 'PRACTICANTE' ? 'PERSONALIZADO' : 'ESTANDAR',
+                    });
+                  }}
+                  className="w-full px-3 py-2.5 bg-slate-50 border border-slate-300 rounded-lg text-slate-900 font-semibold focus:outline-none focus:border-slate-900 cursor-pointer"
                 >
-                  <option value="TRABAJADOR_REGULAR">Trabajador (Regular)</option>
+                  <option value="EMPLEADO_INTERNO">Trabajador Interno</option>
                   <option value="CONTRATISTA">Contratista</option>
                   <option value="PRACTICANTE">Practicante</option>
                 </select>
@@ -797,10 +832,12 @@ export const PersonnelView: React.FC = () => {
 
               {/* Lógica condicional de horario en edición */}
               {editForm.type === 'PRACTICANTE' && (
-                <CustomScheduleEditor
-                  schedule={editForm.customSchedule || DEFAULT_PRACTICANTE_SCHEDULE}
-                  onChange={(updated) => setEditForm({ ...editForm, customSchedule: updated })}
-                />
+                <div className="space-y-2 animate-fadeIn">
+                  <CustomScheduleEditor
+                    schedule={editForm.customSchedule || DEFAULT_PRACTICANTE_SCHEDULE}
+                    onChange={(updated) => setEditForm({ ...editForm, customSchedule: updated })}
+                  />
+                </div>
               )}
 
               {editForm.type === 'CONTRATISTA' && (
@@ -832,16 +869,35 @@ export const PersonnelView: React.FC = () => {
                 </div>
               )}
 
-              {/* Campos generales */}
+              {/* Campos generales con división de nombres */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <div className="sm:col-span-2 space-y-1">
-                  <label className="font-semibold text-slate-700">Nombre Completo:</label>
+                <div className="space-y-1">
+                  <label htmlFor="edit-worker-nombres" className="font-semibold text-slate-700">
+                    Nombres: *
+                  </label>
                   <input
+                    id="edit-worker-nombres"
                     type="text"
                     required
-                    value={editForm.name || ''}
-                    onChange={(e) => setEditForm({ ...editForm, name: e.target.value })}
-                    className="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-lg text-slate-900"
+                    value={editForm.nombres || ''}
+                    onChange={(e) => setEditForm({ ...editForm, nombres: e.target.value })}
+                    placeholder="Ej. Martín Alberto"
+                    className="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-lg text-slate-900 focus:outline-none focus:border-slate-900"
+                  />
+                </div>
+
+                <div className="space-y-1">
+                  <label htmlFor="edit-worker-apellidos" className="font-semibold text-slate-700">
+                    Apellidos: *
+                  </label>
+                  <input
+                    id="edit-worker-apellidos"
+                    type="text"
+                    required
+                    value={editForm.apellidos || ''}
+                    onChange={(e) => setEditForm({ ...editForm, apellidos: e.target.value })}
+                    placeholder="Ej. Ramos Quispe"
+                    className="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-lg text-slate-900 focus:outline-none focus:border-slate-900"
                   />
                 </div>
 
@@ -893,31 +949,6 @@ export const PersonnelView: React.FC = () => {
                     <option value="Tecnología & Redes">Tecnología & Redes</option>
                   </select>
                 </div>
-
-                {/* Sueldo Base Oculto en Edición */}
-                <div className="sm:col-span-2 space-y-1 p-3 rounded-xl bg-slate-50 border border-slate-200">
-                  <div className="flex items-center justify-between mb-1">
-                    <label className="font-bold text-slate-800 flex items-center gap-1.5">
-                      <Calculator className="w-3.5 h-3.5 text-slate-600" />
-                      <span>Sueldo Base Mensual (Confidencial BI)</span>
-                    </label>
-                    <button
-                      type="button"
-                      onClick={() => setShowSalaryInModal(!showSalaryInModal)}
-                      className="text-xs font-semibold text-slate-600 hover:text-slate-900 flex items-center gap-1 cursor-pointer"
-                    >
-                      {showSalaryInModal ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
-                      <span>{showSalaryInModal ? 'Ocultar' : 'Ver Sueldo'}</span>
-                    </button>
-                  </div>
-
-                  <input
-                    type={showSalaryInModal ? 'number' : 'password'}
-                    value={editForm.baseSalary || ''}
-                    onChange={(e) => setEditForm({ ...editForm, baseSalary: Number(e.target.value) })}
-                    className="w-full px-3 py-2 bg-white border border-slate-300 rounded-lg text-slate-900 font-mono"
-                  />
-                </div>
               </div>
 
               {/* Botones */}
@@ -944,7 +975,7 @@ export const PersonnelView: React.FC = () => {
       {/* MODAL 3: FICHA DETALLADA DEL COLABORADOR */}
       {selectedWorker && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-xs animate-fadeIn">
-          <div className="relative w-full max-w-lg bg-white border border-slate-300 rounded-2xl shadow-xl p-6 text-slate-900">
+          <div className="relative w-full max-w-lg bg-white border border-slate-300 rounded-2xl shadow-xl p-6 text-slate-900 max-h-[90vh] overflow-y-auto">
             <div className="flex items-start justify-between pb-3 border-b border-slate-200">
               <div className="flex items-center gap-3">
                 <img

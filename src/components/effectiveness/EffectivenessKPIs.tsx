@@ -14,7 +14,6 @@ interface EffectivenessKPIsProps {
   tardyDays: number;
   leavesCount: number;
   leavesPercentageOfMonth: number;
-  baseSalary: number;
 }
 
 export const EffectivenessKPIs: React.FC<EffectivenessKPIsProps> = ({
@@ -25,11 +24,9 @@ export const EffectivenessKPIs: React.FC<EffectivenessKPIsProps> = ({
   tardyDays,
   leavesCount,
   leavesPercentageOfMonth,
-  baseSalary,
 }) => {
-  // Deduction calculation: [Sueldo / 8h / 60min]
-  const costPerMinute = (baseSalary / 30) / (8 * 60);
-  const totalTardyDeduction = (totalDelayMinutes * costPerMinute).toFixed(2);
+  const lostHoursFromTardiness = Math.round((totalDelayMinutes / 60) * 10) / 10;
+  const lostHoursFromAbsence = absentDays * 8;
 
   return (
     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -83,9 +80,9 @@ export const EffectivenessKPIs: React.FC<EffectivenessKPIsProps> = ({
             </span>
           </div>
           <div className="mt-2 flex items-center justify-between text-xs text-slate-500 pt-2 border-t border-slate-100">
-            <span>Descuento inasistencia</span>
-            <span className="font-mono font-bold text-slate-800">
-              - S/ {((absentDays * baseSalary) / 30).toFixed(2)}
+            <span>Tiempo no laborado:</span>
+            <span className="font-mono font-bold text-rose-700">
+              ⏱️ -{lostHoursFromAbsence} hrs
             </span>
           </div>
         </div>
@@ -112,9 +109,9 @@ export const EffectivenessKPIs: React.FC<EffectivenessKPIsProps> = ({
             </span>
           </div>
           <div className="mt-2 flex items-center justify-between text-xs text-slate-500 pt-2 border-t border-slate-100">
-            <span title="Cálculo exacto: [Sueldo / 8h / 60min]">Descuento computable:</span>
-            <span className="font-mono font-bold text-slate-900">
-              - S/ {totalTardyDeduction}
+            <span>Tiempo perdido acumulado:</span>
+            <span className="font-mono font-bold text-amber-700">
+              ⏱️ -{lostHoursFromTardiness} hrs
             </span>
           </div>
         </div>

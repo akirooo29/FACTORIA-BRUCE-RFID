@@ -18,18 +18,20 @@ interface AttendanceCalendarProps {
   dailyLogs: DailyAttendanceSummary[];
   monthName: string;
   workerName: string;
-  baseSalary: number;
+  currentYear: number;
+  currentMonthIndex: number;
+  onMonthChange: (year: number, monthIndex: number) => void;
 }
 
 export const AttendanceCalendar: React.FC<AttendanceCalendarProps> = ({
   dailyLogs,
   monthName,
   workerName,
-  baseSalary,
+  currentYear,
+  currentMonthIndex,
+  onMonthChange,
 }) => {
   const [selectedDayLog, setSelectedDayLog] = useState<DailyAttendanceSummary | null>(null);
-  const [currentMonthIndex, setCurrentMonthIndex] = useState<number>(8); // 8 = Septiembre
-  const [currentYear, setCurrentYear] = useState<number>(2026);
 
   const monthNames = [
     'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
@@ -38,19 +40,17 @@ export const AttendanceCalendar: React.FC<AttendanceCalendarProps> = ({
 
   const handlePrevMonth = () => {
     if (currentMonthIndex === 0) {
-      setCurrentMonthIndex(11);
-      setCurrentYear((y) => y - 1);
+      onMonthChange(currentYear - 1, 11);
     } else {
-      setCurrentMonthIndex((m) => m - 1);
+      onMonthChange(currentYear, currentMonthIndex - 1);
     }
   };
 
   const handleNextMonth = () => {
     if (currentMonthIndex === 11) {
-      setCurrentMonthIndex(0);
-      setCurrentYear((y) => y + 1);
+      onMonthChange(currentYear + 1, 0);
     } else {
-      setCurrentMonthIndex((m) => m + 1);
+      onMonthChange(currentYear, currentMonthIndex + 1);
     }
   };
 
@@ -62,6 +62,26 @@ export const AttendanceCalendar: React.FC<AttendanceCalendarProps> = ({
 
   const getDayIndicator = (log?: DailyAttendanceSummary) => {
     if (!log) return null;
+
+    // 0. Día previo al ingreso laboral / No vinculado
+    if (log.status === 'PRE_INGRESO' || log.status === 'NO_VINCULADO') {
+      return (
+        <span className="inline-flex items-center gap-1 text-[10px] font-medium text-slate-400 bg-slate-100/70 px-1.5 py-0.5 rounded border border-slate-200">
+          Pre-Ingreso
+        </span>
+      );
+    }
+
+    // 0.1 Día futuro o pendiente de cumplimiento
+    if (log.status === 'PENDIENTE') {
+      return (
+        <span className="inline-flex items-center gap-1 text-[10px] font-medium text-slate-400 bg-slate-100/80 px-1.5 py-0.5 rounded border border-slate-200">
+          Pendiente
+        </span>
+      );
+    }
+
+    // 0.1 Día no laborable (Domingo - Descanso Semanal)
     if (!log.isWorkday) {
       return (
         <span className="text-[10px] text-slate-400 font-medium">
@@ -137,6 +157,12 @@ export const AttendanceCalendar: React.FC<AttendanceCalendarProps> = ({
 
   const getBorderColorByStatus = (status?: AttendancePunctuality, isWorkday?: boolean, slipMotive?: string) => {
     if (!isWorkday) return 'border-dashed border-slate-200 bg-slate-50/50';
+    if (status === 'PRE_INGRESO' || status === 'NO_VINCULADO') {
+      return 'border-dashed border-slate-200 bg-slate-50/20 text-slate-400 opacity-60';
+    }
+    if (status === 'PENDIENTE') {
+      return 'border-dashed border-slate-200 bg-slate-50/40 hover:bg-slate-50';
+    }
     if (status === 'VACACIONES' || slipMotive === 'VACACIONES') {
       return 'border-blue-300 hover:border-blue-500 bg-blue-50/30';
     }
@@ -151,15 +177,13 @@ export const AttendanceCalendar: React.FC<AttendanceCalendarProps> = ({
       case 'PUERTA_CERRADA':
         return 'border-rose-300 hover:border-rose-500 bg-rose-50/20';
       case 'FALTA':
-        return 'border-slate-300 hover:border-slate-500 bg-slate-100';
+        return 'border-rose-200 hover:border-rose-400 bg-rose-50/20';
       case 'JUSTIFICADO':
         return 'border-slate-300 hover:border-slate-900 bg-slate-50';
       default:
         return 'border-slate-200 bg-white';
     }
   };
-
-  const costPerMinute = (baseSalary / 30) / (8 * 60);
 
   return (
     <div className="p-6 rounded-xl bg-white border border-slate-200 space-y-5 shadow-sm">
@@ -254,56 +278,81 @@ export const AttendanceCalendar: React.FC<AttendanceCalendarProps> = ({
 
           {Array.from({ length: daysInMonth }).map((_, i) => {
             const dayNum = i + 1;
-            const log = currentMonthIndex === 8 && currentYear === 2026
-              ? dailyLogs.find((l) => l.dayNumber === dayNum)
-              : undefined;
+            const monthStr = (currentMonthIndex + 1).toString().padStart(2, '0');
+            const dayStr = dayNum.toString().padStart(2, '0');
+            const targetDateStr = `${currentYear}-${monthStr}-${dayStr}`;
+            const log = dailyLogs.find((l) => l.date === targetDateStr);
 
+            const now = new Date();
+            const todayStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
             const isSunday = (startDayOffset + i) % 7 === 6;
             const isSaturday = (startDayOffset + i) % 7 === 5;
-            const isWorkday = log ? log.isWorkday : !isSunday;
+            const isFuture = targetDateStr > todayStr;
+            const isToday = targetDateStr === todayStr;
 
-            const isVacation = log?.status === 'VACACIONES' || log?.slipMotive === 'VACACIONES';
+            // Fallback determinista en caso de navegación de meses sin dailyLogs precargados
+            const effectiveLog: DailyAttendanceSummary = log || {
+              date: targetDateStr,
+              dayName: weekDayHeaders[(startDayOffset + i) % 7],
+              dayNumber: dayNum,
+              isWorkday: !isSunday,
+              status: isSunday ? 'A_TIEMPO' : (isFuture ? 'PENDIENTE' : 'FALTA'),
+              delayMinutes: 0,
+              notes: isSunday
+                ? 'Domingo (Descanso Semanal)'
+                : isFuture
+                  ? 'Jornada futura / pendiente de cumplimiento'
+                  : 'Inasistencia Injustificada (Falta)',
+            };
+
+            const isWorkday = effectiveLog.isWorkday;
+            const isVacation = effectiveLog.status === 'VACACIONES' || effectiveLog.slipMotive === 'VACACIONES';
+
+            console.log("Buscando:", `${currentYear}-${(currentMonthIndex + 1).toString().padStart(2, '0')}-02`);
+            console.log("Lo que hay en dailyLogs:", dailyLogs);
 
             return (
               <div
                 key={`day-${dayNum}`}
                 onClick={() => {
-                  if (log) setSelectedDayLog(log);
+                  setSelectedDayLog(effectiveLog);
                 }}
                 className={`group relative h-24 sm:h-26 p-2 rounded-lg border transition-colors flex flex-col justify-between cursor-pointer select-none ${getBorderColorByStatus(
-                  log?.status,
+                  effectiveLog.status,
                   isWorkday,
-                  log?.slipMotive
-                )} ${
-                  log?.isWorkday ? 'hover:bg-slate-50/80' : 'opacity-60'
-                }`}
+                  effectiveLog.slipMotive
+                )} ${effectiveLog.status === 'PENDIENTE'
+                  ? 'opacity-70'
+                  : isWorkday
+                    ? 'hover:bg-slate-50/80'
+                    : 'opacity-60'
+                  }`}
               >
                 {/* Cabecera del día */}
                 <div className="flex items-center justify-between">
                   <span
-                    className={`font-mono text-xs font-semibold w-5 h-5 flex items-center justify-center rounded ${
-                      dayNum === 18 && currentMonthIndex === 8 && currentYear === 2026
-                        ? 'bg-slate-900 text-white font-bold'
-                        : isVacation
+                    className={`font-mono text-xs font-semibold w-5 h-5 flex items-center justify-center rounded ${isToday
+                      ? 'bg-slate-900 text-white font-bold'
+                      : isVacation
                         ? 'bg-blue-100 text-blue-900 font-bold'
                         : 'text-slate-700'
-                    }`}
+                      }`}
                   >
                     {dayNum}
                   </span>
 
-                  {log?.checkInTime ? (
+                  {effectiveLog.checkInTime ? (
                     <span className="font-mono text-[9px] text-slate-500 font-medium hidden sm:inline">
-                      {log.checkInTime.slice(0, 5)}
+                      {effectiveLog.checkInTime.slice(0, 5)}
                     </span>
-                  ) : isSaturday ? (
+                  ) : isSaturday && isWorkday && !isFuture ? (
                     <span className="text-[9px] text-slate-400 font-mono hidden sm:inline">Sáb.</span>
                   ) : null}
                 </div>
 
                 {/* Badge central */}
                 <div className="my-1">
-                  {getDayIndicator(log)}
+                  {getDayIndicator(effectiveLog)}
                 </div>
 
                 {/* Pie del día con horarios reales */}
@@ -312,12 +361,18 @@ export const AttendanceCalendar: React.FC<AttendanceCalendarProps> = ({
                     <span className="font-semibold text-blue-700">
                       Vacaciones
                     </span>
-                  ) : log?.slipMotive ? (
+                  ) : effectiveLog.slipMotive ? (
                     <span className="font-medium text-slate-700">
-                      {log.slipMotive.replace('_', ' ')}
+                      {effectiveLog.slipMotive.replace('_', ' ')}
                     </span>
-                  ) : log?.checkOutTime ? (
-                    <span className="font-mono text-slate-500">Sal: {log.checkOutTime.slice(0, 5)}</span>
+                  ) : effectiveLog.status === 'PRE_INGRESO' || effectiveLog.status === 'NO_VINCULADO' ? (
+                    <span className="text-slate-300 font-mono">--:--</span>
+                  ) : effectiveLog.status === 'PENDIENTE' ? (
+                    <span className="text-slate-300 font-mono">--:--</span>
+                  ) : effectiveLog.status === 'FALTA' ? (
+                    <span className="text-rose-500 font-medium text-[9px]">Falta</span>
+                  ) : effectiveLog.checkOutTime ? (
+                    <span className="font-mono text-slate-500">Sal: {effectiveLog.checkOutTime.slice(0, 5)}</span>
                   ) : !isWorkday ? (
                     <span className="text-slate-400 font-mono">--:--</span>
                   ) : (
@@ -400,13 +455,13 @@ export const AttendanceCalendar: React.FC<AttendanceCalendarProps> = ({
                   </span>
                 </div>
                 <div>
-                  <span className="text-[10px] text-slate-500 block">Impacto en Liquidación:</span>
+                  <span className="text-[10px] text-slate-500 block">Tiempo No Laborado:</span>
                   <span className="font-mono font-bold text-slate-900">
                     {selectedDayLog.delayMinutes > 0
-                      ? `- S/ ${(selectedDayLog.delayMinutes * costPerMinute).toFixed(2)}`
+                      ? `-${selectedDayLog.delayMinutes} min de tardanza`
                       : selectedDayLog.status === 'FALTA'
-                      ? `- S/ ${(baseSalary / 30).toFixed(2)} (Falta)`
-                      : 'Sin descuento'}
+                        ? '-8 hrs (Jornada Incompleta)'
+                        : '0 hrs (Turno Completo)'}
                   </span>
                 </div>
               </div>

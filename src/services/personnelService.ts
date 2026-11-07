@@ -10,7 +10,7 @@ import { INITIAL_WORKERS } from '../data/mockData';
  * Cuando el backend esté listo, cambiar USE_MOCK_API a false y configurar API_BASE_URL.
  */
 
-export const API_BASE_URL = 'http://localhost:5000/api/trabajadores';
+export const API_BASE_URL = 'http://localhost:5216/api/Trabajadores';
 const USE_MOCK_API = true; // Cambiar a false al desplegar backend real
 
 // Estado en memoria simulando la tabla 'Trabajadores' de SQL Server

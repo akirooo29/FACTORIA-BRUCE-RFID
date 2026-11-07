@@ -72,7 +72,7 @@ export const CustomScheduleEditor: React.FC<CustomScheduleEditorProps> = ({
           </div>
           <div>
             <h4 className="text-xs font-bold text-slate-900">
-              Horario Personalizado de Prácticas (Día por Día)
+              Horario Personalizado de Prácticas
             </h4>
             <p className="text-[11px] text-slate-500">
               Seleccione los días de asistencia y defina horas de ingreso y salida independientes.

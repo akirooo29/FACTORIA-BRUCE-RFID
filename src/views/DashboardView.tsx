@@ -1,6 +1,6 @@
 import React from 'react';
 import { useApp } from '../context/AppContext';
-import { Badge } from '../components/common/Badge';
+import { LiveAccessRadar } from '../components/dashboard/LiveAccessRadar';
 import type { AttendanceRecord, Worker } from '../types';
 import {
   Users,
@@ -9,12 +9,10 @@ import {
   HardHat,
   UserCheck,
   TrendingUp,
-  ArrowUpRight,
   Activity,
   Layers,
   Gauge,
   BarChart3,
-  Calculator,
   CalendarDays,
 } from 'lucide-react';
 
@@ -157,58 +155,11 @@ export const DashboardView: React.FC = () => {
       </div>
 
       {/* Main Grid: Activity Feed & Accesos Operativos */}
+      {/* Main Grid: Live Access Radar (The Bomb) & Accesos Operativos */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-5">
-        {/* Recent Attendance Feed (7 Cols) */}
-        <div className="lg:col-span-7 rounded-2xl bg-white border border-slate-200 shadow-xs p-5 space-y-3">
-          <div className="flex items-center justify-between pb-3 border-b border-slate-100">
-            <div>
-              <h2 className="text-xs font-bold text-slate-900 uppercase tracking-wider flex items-center gap-1.5">
-                <Clock className="w-3.5 h-3.5 text-slate-500" />
-                Flujo de Accesos en Antenas RFID
-              </h2>
-              <p className="text-xs text-slate-500">Registros automáticos en tiempo real</p>
-            </div>
-
-            <button
-              onClick={() => setCurrentView('attendance')}
-              className="text-xs font-bold text-slate-900 hover:underline flex items-center gap-1 cursor-pointer"
-            >
-              <span>Ver todos</span>
-              <ArrowUpRight className="w-3.5 h-3.5" />
-            </button>
-          </div>
-
-          <div className="space-y-2">
-            {attendanceLogs.slice(0, 5).map((record: AttendanceRecord) => (
-              <div
-                key={record.id}
-                className="flex items-center justify-between p-3 rounded-xl bg-slate-50 border border-slate-200/80 hover:bg-slate-100/70 transition-colors"
-              >
-                <div className="flex items-center gap-2.5 min-w-0">
-                  <img
-                    src={record.avatarUrl}
-                    alt={record.workerName}
-                    className="w-9 h-9 rounded-lg object-cover border border-slate-200 shrink-0"
-                  />
-                  <div className="min-w-0">
-                    <p className="text-xs font-bold text-slate-900 truncate">{record.workerName}</p>
-                    <p className="text-[11px] text-slate-500 truncate">{record.workerPosition}</p>
-                    <div className="mt-1 flex items-center gap-1.5">
-                      <Badge value={record.workerType} size="sm" />
-                      {record.punctuality && <Badge value={record.punctuality} size="sm" />}
-                    </div>
-                  </div>
-                </div>
-
-                <div className="text-right shrink-0">
-                  <span className="text-xs font-mono font-bold text-slate-900 block">
-                    {record.timeFormatted}
-                  </span>
-                  <Badge value={record.scanType} size="sm" />
-                </div>
-              </div>
-            ))}
-          </div>
+        {/* Radar de Accesos en Vivo (7 Cols) */}
+        <div className="lg:col-span-7">
+          <LiveAccessRadar />
         </div>
 
         {/* Accesos Rápidos RRHH & Estado del Hardware (5 Cols) */}
@@ -246,12 +197,12 @@ export const DashboardView: React.FC = () => {
 
               <button
                 type="button"
-                onClick={() => setCurrentView('payroll_deductions')}
+                onClick={() => setCurrentView('attendance')}
                 className="p-3 rounded-xl bg-slate-50 border border-slate-200 text-left hover:bg-slate-100 transition-colors cursor-pointer"
               >
-                <Calculator className="w-4 h-4 text-slate-800 mb-1" />
-                <span className="text-xs font-bold block text-slate-900">Descuentos Planilla</span>
-                <span className="text-[10px] text-slate-500">Tardanzas por Minuto</span>
+                <Clock className="w-4 h-4 text-slate-800 mb-1" />
+                <span className="text-xs font-bold block text-slate-900">Control RFID</span>
+                <span className="text-[10px] text-slate-500">Supervisión en Planta</span>
               </button>
 
               <button

@@ -9,9 +9,13 @@ import {
 import { ShieldCheck } from 'lucide-react';
 import { GENERAL_PUNCTUALITY_DISTRIBUTION } from '../../data/mockData';
 
-export const PunctualityDonutChart: React.FC = () => {
-  const data = GENERAL_PUNCTUALITY_DISTRIBUTION;
-  const onTimePercentage = data.find((d) => d.name.includes('A Tiempo'))?.value || 83.5;
+interface PunctualityDonutChartProps {
+  data?: { name: string; value: number; count: number; color: string }[];
+}
+
+export const PunctualityDonutChart: React.FC<PunctualityDonutChartProps> = ({ data: propData }) => {
+  const data = propData && propData.length > 0 ? propData : GENERAL_PUNCTUALITY_DISTRIBUTION;
+  const onTimePercentage = data.find((d) => d.name.includes('A Tiempo') || d.name.includes('Puntual'))?.value ?? 100;
 
   const CustomTooltip = ({ active, payload }: any) => {
     if (active && payload && payload.length) {
