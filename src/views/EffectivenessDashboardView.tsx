@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { useApp } from '../context/AppContext';
 import { Badge } from '../components/common/Badge';
 import { AttendanceCalendar } from '../components/effectiveness/AttendanceCalendar';
@@ -540,168 +541,170 @@ export const EffectivenessDashboardView: React.FC = () => {
       )}
 
       {/* Modal / Panel Superpuesto de Diagnóstico IA (ML.NET) */}
-      {showAiPanel && (
-        <div
-          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-xs animate-fadeIn"
-          onClick={() => setShowAiPanel(false)}
-        >
+      {showAiPanel &&
+        createPortal(
           <div
-            className="relative w-full max-w-md bg-white border border-slate-200 rounded-2xl shadow-2xl p-6 text-slate-900"
-            onClick={(e) => e.stopPropagation()}
+            className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-900/40 backdrop-blur-sm p-4 animate-fadeIn"
+            onClick={() => setShowAiPanel(false)}
           >
-            {/* Cabecera del Modal */}
-            <div className="flex items-start justify-between pb-3 border-b border-slate-100">
-              <div className="flex items-center gap-2.5">
-                <div className="p-2 bg-indigo-50 border border-indigo-200 rounded-xl text-indigo-600">
-                  <Activity className="w-5 h-5" />
+            <div
+              className="relative w-full max-w-md max-h-[90vh] overflow-y-auto bg-white border border-slate-200 rounded-2xl shadow-2xl p-6 text-slate-900"
+              onClick={(e) => e.stopPropagation()}
+            >
+              {/* Cabecera del Modal */}
+              <div className="flex items-start justify-between pb-3 border-b border-slate-100">
+                <div className="flex items-center gap-2.5">
+                  <div className="p-2 bg-indigo-50 border border-indigo-200 rounded-xl text-indigo-600">
+                    <Activity className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <h3 className="text-base font-bold text-slate-900 leading-tight">
+                      Diagnóstico IA • Riesgo de Fatiga
+                    </h3>
+                    <p className="text-xs text-slate-500">
+                      {activeWorker.name} • <span className="font-mono">#{activeWorker.id}</span>
+                    </p>
+                  </div>
                 </div>
-                <div>
-                  <h3 className="text-base font-bold text-slate-900 leading-tight">
-                    Diagnóstico IA • Riesgo de Fatiga
-                  </h3>
-                  <p className="text-xs text-slate-500">
-                    {activeWorker.name} • <span className="font-mono">#{activeWorker.id}</span>
-                  </p>
-                </div>
-              </div>
-              <button
-                type="button"
-                onClick={() => setShowAiPanel(false)}
-                className="text-slate-400 hover:text-slate-700 p-1.5 rounded-lg hover:bg-slate-100 transition cursor-pointer"
-                title="Cerrar modal"
-              >
-                <X className="w-5 h-5" />
-              </button>
-            </div>
-
-            {/* Contenido Dinámico */}
-            {isAiLoading ? (
-              <div className="py-12 flex flex-col items-center justify-center gap-3">
-                <div className="w-8 h-8 border-3 border-indigo-600 border-t-transparent rounded-full animate-spin" />
-                <p className="text-xs text-slate-600 font-semibold animate-pulse">
-                  Consultando predicciones de ML.NET...
-                </p>
-              </div>
-            ) : aiError ? (
-              <div className="py-8 text-center space-y-3">
-                <AlertTriangle className="w-8 h-8 text-amber-500 mx-auto" />
-                <p className="text-sm font-semibold text-slate-800">No se pudo obtener el diagnóstico</p>
-                <p className="text-xs text-red-600">{aiError}</p>
                 <button
                   type="button"
-                  onClick={handleOpenAiDiagnostic}
-                  className="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold rounded-lg transition cursor-pointer"
+                  onClick={() => setShowAiPanel(false)}
+                  className="text-slate-400 hover:text-slate-700 p-1.5 rounded-lg hover:bg-slate-100 transition cursor-pointer"
+                  title="Cerrar modal"
                 >
-                  Reintentar
+                  <X className="w-5 h-5" />
                 </button>
               </div>
-            ) : aiScore ? (
-              <div className="py-5 space-y-5">
-                {/* Porcentaje de Riesgo de Fatiga en tamaño grande */}
-                <div className="text-center space-y-1">
-                  <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
-                    Nivel de Riesgo de Fatiga
-                  </span>
-                  <div className="flex items-center justify-center">
-                    <span
-                      className={`text-5xl font-black tracking-tight ${
-                        aiScore.riesgoFatiga >= 80
-                          ? 'text-red-600'
-                          : aiScore.riesgoFatiga >= 40
-                          ? 'text-amber-500'
-                          : 'text-emerald-600'
-                      }`}
-                    >
-                      {Math.round(aiScore.riesgoFatiga)}%
-                    </span>
-                  </div>
-                  <span
-                    className={`inline-block px-2.5 py-0.5 rounded-full text-xs font-bold ${
-                      aiScore.riesgoFatiga >= 80
-                        ? 'bg-red-50 text-red-700 border border-red-200'
-                        : aiScore.riesgoFatiga >= 40
-                        ? 'bg-amber-50 text-amber-700 border border-amber-200'
-                        : 'bg-emerald-50 text-emerald-700 border border-emerald-200'
-                    }`}
-                  >
-                    {aiScore.riesgoFatiga >= 80
-                      ? 'Riesgo Crítico de Fatiga (≥ 80%)'
-                      : aiScore.riesgoFatiga >= 40
-                      ? 'Riesgo Moderado (40% - 79%)'
-                      : 'Riesgo Bajo / Óptimo (< 40%)'}
-                  </span>
-                </div>
 
-                {/* Barra de progreso (< 40% Verde, 40-79% Amarillo, >= 80% Rojo) */}
-                <div className="space-y-1.5">
-                  <div className="flex justify-between text-xs font-semibold text-slate-600">
-                    <span>Intensidad de Fatiga</span>
-                    <span>{aiScore.riesgoFatiga}%</span>
-                  </div>
-                  <div className="w-full bg-slate-100 rounded-full h-3 overflow-hidden border border-slate-200">
-                    <div
-                      className={`h-full rounded-full transition-all duration-500 ${
-                        aiScore.riesgoFatiga >= 80
-                          ? 'bg-red-500'
-                          : aiScore.riesgoFatiga >= 40
-                          ? 'bg-amber-500'
-                          : 'bg-emerald-500'
-                      }`}
-                      style={{ width: `${Math.min(Math.max(aiScore.riesgoFatiga, 5), 100)}%` }}
-                    />
-                  </div>
-                </div>
-
-                {/* Desglose descriptivo de factores determinantes */}
-                <div className="bg-slate-50 border border-slate-200 rounded-xl p-3.5 space-y-2.5">
-                  <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500 block">
-                    Desglose de Factores Determinantes
-                  </span>
-                  <div className="grid grid-cols-2 gap-3">
-                    <div className="p-2.5 bg-white border border-slate-200 rounded-lg">
-                      <span className="text-xs text-slate-500 block">Minutos de Tardanza</span>
-                      <span className="text-lg font-bold text-slate-800">
-                        {aiScore.minutosTardanza}{' '}
-                        <span className="text-xs font-normal text-slate-500">min</span>
-                      </span>
-                    </div>
-                    <div className="p-2.5 bg-white border border-slate-200 rounded-lg">
-                      <span className="text-xs text-slate-500 block">Horas Extra</span>
-                      <span className="text-lg font-bold text-slate-800">
-                        {aiScore.horasExtra}{' '}
-                        <span className="text-xs font-normal text-slate-500">hrs</span>
-                      </span>
-                    </div>
-                  </div>
-                  <p className="text-[11px] text-slate-500 leading-snug">
-                    {aiScore.riesgoFatiga >= 80
-                      ? 'La sobrecarga horaria y las demoras acumuladas indican probabilidad crítica de fatiga. Se sugiere coordinar pausas activas o compensación de turno.'
-                      : aiScore.riesgoFatiga >= 40
-                      ? 'Factores de sobretiempo moderados. Mantener supervisión preventiva en turnos de alta exigencia.'
-                      : 'Patrón de asistencia regular y descanso equilibrado según el modelo predictivo de ML.NET.'}
+              {/* Contenido Dinámico */}
+              {isAiLoading ? (
+                <div className="py-12 flex flex-col items-center justify-center gap-3">
+                  <div className="w-8 h-8 border-3 border-indigo-600 border-t-transparent rounded-full animate-spin" />
+                  <p className="text-xs text-slate-600 font-semibold animate-pulse">
+                    Consultando predicciones de ML.NET...
                   </p>
                 </div>
-              </div>
-            ) : (
-              <div className="py-8 text-center text-slate-500 text-xs">
-                No se encontraron registros de inferencia de IA para este colaborador.
-              </div>
-            )}
+              ) : aiError ? (
+                <div className="py-8 text-center space-y-3">
+                  <AlertTriangle className="w-8 h-8 text-amber-500 mx-auto" />
+                  <p className="text-sm font-semibold text-slate-800">No se pudo obtener el diagnóstico</p>
+                  <p className="text-xs text-red-600">{aiError}</p>
+                  <button
+                    type="button"
+                    onClick={handleOpenAiDiagnostic}
+                    className="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold rounded-lg transition cursor-pointer"
+                  >
+                    Reintentar
+                  </button>
+                </div>
+              ) : aiScore ? (
+                <div className="py-5 space-y-5">
+                  {/* Porcentaje de Riesgo de Fatiga en tamaño grande */}
+                  <div className="text-center space-y-1">
+                    <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
+                      Nivel de Riesgo de Fatiga
+                    </span>
+                    <div className="flex items-center justify-center">
+                      <span
+                        className={`text-5xl font-black tracking-tight ${
+                          aiScore.riesgoFatiga >= 80
+                            ? 'text-red-600'
+                            : aiScore.riesgoFatiga >= 40
+                            ? 'text-amber-500'
+                            : 'text-emerald-600'
+                        }`}
+                      >
+                        {Math.round(aiScore.riesgoFatiga)}%
+                      </span>
+                    </div>
+                    <span
+                      className={`inline-block px-2.5 py-0.5 rounded-full text-xs font-bold ${
+                        aiScore.riesgoFatiga >= 80
+                          ? 'bg-red-50 text-red-700 border border-red-200'
+                          : aiScore.riesgoFatiga >= 40
+                          ? 'bg-amber-50 text-amber-700 border border-amber-200'
+                          : 'bg-emerald-50 text-emerald-700 border border-emerald-200'
+                      }`}
+                    >
+                      {aiScore.riesgoFatiga >= 80
+                        ? 'Riesgo Crítico de Fatiga (≥ 80%)'
+                        : aiScore.riesgoFatiga >= 40
+                        ? 'Riesgo Moderado (40% - 79%)'
+                        : 'Riesgo Bajo / Óptimo (< 40%)'}
+                    </span>
+                  </div>
 
-            {/* Pie del modal */}
-            <div className="pt-3 border-t border-slate-100 flex items-center justify-between">
-              <span className="text-[10px] font-mono text-slate-400">Motor: ML.NET FastTree</span>
-              <button
-                type="button"
-                onClick={() => setShowAiPanel(false)}
-                className="px-3.5 py-1.5 bg-slate-900 hover:bg-slate-800 text-white text-xs font-semibold rounded-lg transition cursor-pointer"
-              >
-                Cerrar
-              </button>
+                  {/* Barra de progreso (< 40% Verde, 40-79% Amarillo, >= 80% Rojo) */}
+                  <div className="space-y-1.5">
+                    <div className="flex justify-between text-xs font-semibold text-slate-600">
+                      <span>Intensidad de Fatiga</span>
+                      <span>{aiScore.riesgoFatiga}%</span>
+                    </div>
+                    <div className="w-full bg-slate-100 rounded-full h-3 overflow-hidden border border-slate-200">
+                      <div
+                        className={`h-full rounded-full transition-all duration-500 ${
+                          aiScore.riesgoFatiga >= 80
+                            ? 'bg-red-500'
+                            : aiScore.riesgoFatiga >= 40
+                            ? 'bg-amber-500'
+                            : 'bg-emerald-500'
+                        }`}
+                        style={{ width: `${Math.min(Math.max(aiScore.riesgoFatiga, 5), 100)}%` }}
+                      />
+                    </div>
+                  </div>
+
+                  {/* Desglose descriptivo de factores determinantes */}
+                  <div className="bg-slate-50 border border-slate-200 rounded-xl p-3.5 space-y-2.5">
+                    <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500 block">
+                      Desglose de Factores Determinantes
+                    </span>
+                    <div className="grid grid-cols-2 gap-3">
+                      <div className="p-2.5 bg-white border border-slate-200 rounded-lg">
+                        <span className="text-xs text-slate-500 block">Minutos de Tardanza</span>
+                        <span className="text-lg font-bold text-slate-800">
+                          {aiScore.minutosTardanza}{' '}
+                          <span className="text-xs font-normal text-slate-500">min</span>
+                        </span>
+                      </div>
+                      <div className="p-2.5 bg-white border border-slate-200 rounded-lg">
+                        <span className="text-xs text-slate-500 block">Horas Extra</span>
+                        <span className="text-lg font-bold text-slate-800">
+                          {aiScore.horasExtra}{' '}
+                          <span className="text-xs font-normal text-slate-500">hrs</span>
+                        </span>
+                      </div>
+                    </div>
+                    <p className="text-[11px] text-slate-500 leading-snug">
+                      {aiScore.riesgoFatiga >= 80
+                        ? 'La sobrecarga horaria y las demoras acumuladas indican probabilidad crítica de fatiga. Se sugiere coordinar pausas activas o compensación de turno.'
+                        : aiScore.riesgoFatiga >= 40
+                        ? 'Factores de sobretiempo moderados. Mantener supervisión preventiva en turnos de alta exigencia.'
+                        : 'Patrón de asistencia regular y descanso equilibrado según el modelo predictivo de ML.NET.'}
+                    </p>
+                  </div>
+                </div>
+              ) : (
+                <div className="py-8 text-center text-slate-500 text-xs">
+                  No se encontraron registros de inferencia de IA para este colaborador.
+                </div>
+              )}
+
+              {/* Pie del modal */}
+              <div className="pt-3 border-t border-slate-100 flex items-center justify-between">
+                <span className="text-[10px] font-mono text-slate-400">Motor: ML.NET FastTree</span>
+                <button
+                  type="button"
+                  onClick={() => setShowAiPanel(false)}
+                  className="px-3.5 py-1.5 bg-slate-900 hover:bg-slate-800 text-white text-xs font-semibold rounded-lg transition cursor-pointer"
+                >
+                  Cerrar
+                </button>
+              </div>
             </div>
-          </div>
-        </div>
-      )}
+          </div>,
+          document.body
+        )}
     </div>
   );
 };

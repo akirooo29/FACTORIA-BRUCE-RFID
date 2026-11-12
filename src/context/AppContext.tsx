@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
+import React, { createContext, useContext, useState, useEffect, useCallback, useRef } from 'react';
 import { HubConnectionBuilder, LogLevel } from '@microsoft/signalr';
 import type {
   Worker,
@@ -207,6 +207,12 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const [isLoadingWorkers, setIsLoadingWorkers] = useState<boolean>(true);
   const [workersError, setWorkersError] = useState<string | null>(null);
 
+  // Referencia mutable a workers para evitar reconexiones de SignalR y dependencias circulares
+  const workersRef = useRef<Worker[]>(workers);
+  useEffect(() => {
+    workersRef.current = workers;
+  }, [workers]);
+
   // Estado de Asistencias desde la Base de Datos SQL Server
   const [attendanceLogs, setAttendanceLogs] = useState<AttendanceRecord[]>([]);
   const [isLoadingAttendances, setIsLoadingAttendances] = useState<boolean>(true);
@@ -226,6 +232,11 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
       const data = await response.json();
       if (Array.isArray(data)) {
+        // Mapear registros crudos a AttendanceRecord con valores por defecto seguros
+        const mappedRecords: AttendanceRecord[] = data.map((item: any) =>
+          item.timeFormatted ? item : mapAsistenciaToAttendanceRecord(item, workersRef.current)
+        );
+
         setAttendanceLogs((prev) => {
           // Mantener marcaciones de otros trabajadores y actualizar con el historial del trabajador seleccionado
           const otherWorkers = prev.filter(
@@ -233,7 +244,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
               Number(rec.workerId ?? (rec as any).WorkerId ?? (rec as any).trabajadorId) !==
               Number(workerId)
           );
-          return [...otherWorkers, ...data];
+          return [...otherWorkers, ...mappedRecords];
         });
       }
     } catch (err) {
@@ -254,12 +265,10 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       const list: Worker[] = Array.isArray(data) ? data.map(mapWorkerData) : [];
       setWorkers(list);
 
-      // Si hay trabajadores, fijar el primero y cargar de inmediato su historial de marcaciones
+      // Si hay trabajadores, fijar el primero para las estadísticas individuales
       if (list.length > 0) {
         const initialWorkerId = list[0].id;
         setSelectedWorkerForStats(initialWorkerId);
-        // Procesar inmediatamente las asistencias para evitar el estado fantasma
-        await fetchWorkerAttendances(initialWorkerId);
       }
     } catch (err: any) {
       console.error('Error al consultar http://localhost:5216/api/Trabajadores:', err);
@@ -270,34 +279,33 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     } finally {
       setIsLoadingWorkers(false);
     }
-  }, [fetchWorkerAttendances]);
+  }, []);
 
   useEffect(() => {
     fetchWorkers();
   }, [fetchWorkers]);
 
-  // Carga de asistencias reales de HOY desde SQL Server para el Radar de Accesos y reportes
+  // Carga general de asistencias de toda la planta desde SQL Server (sin filtro de trabajadorId)
   const fetchAttendances = useCallback(async () => {
     setIsLoadingAttendances(true);
     setAttendancesError(null);
     try {
-      const response = await fetch('http://localhost:5216/api/asistencia/hoy');
+      const response = await fetch('http://localhost:5216/api/asistencias');
       if (!response.ok) {
         throw new Error(`Error en el servidor: ${response.status} ${response.statusText}`);
       }
       const data = await response.json();
-      const todayLogs = Array.isArray(data) ? data : [];
-      setAttendanceLogs((prev) => {
-        // Preservar marcaciones históricas previas y solo fusionar las de hoy sin duplicados
-        const todayIds = new Set(todayLogs.map((l: any) => l.id));
-        const filteredPrev = prev.filter((p) => !todayIds.has(p.id));
-        return [...filteredPrev, ...todayLogs];
-      });
+      const rawLogs = Array.isArray(data) ? data : [];
+      const mappedLogs: AttendanceRecord[] = rawLogs.map((item: any) =>
+        item.timeFormatted ? item : mapAsistenciaToAttendanceRecord(item, workersRef.current)
+      );
+
+      setAttendanceLogs(mappedLogs);
     } catch (err: any) {
-      console.error('Error al consultar http://localhost:5216/api/asistencia/hoy:', err);
+      console.error('Error al consultar http://localhost:5216/api/asistencias:', err);
       const errorMsg =
         err?.message ||
-        'No se pudo conectar con el endpoint de Asistencias en SQL Server (http://localhost:5216/api/asistencia/hoy).';
+        'No se pudo conectar con el endpoint de Asistencias en SQL Server (http://localhost:5216/api/asistencias).';
       setAttendancesError(errorMsg);
     } finally {
       setIsLoadingAttendances(false);
@@ -310,24 +318,23 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   // Conexión WebSockets en tiempo real vía SignalR (http://localhost:5216/hubs/attendance)
   useEffect(() => {
+    let isCancelled = false;
+
     const connection = new HubConnectionBuilder()
       .withUrl('http://localhost:5216/hubs/attendance', {
         withCredentials: true,
       })
       .withAutomaticReconnect([0, 2000, 5000, 10000])
-      .configureLogging(LogLevel.Information)
+      .configureLogging(LogLevel.Warning)
       .build();
-
-    let isMounted = true;
 
     // Suscripción al evento ReceiveNewAttendance emitido por C# al detectar un nuevo acceso RFID
     connection.on('ReceiveNewAttendance', (data: any) => {
       console.log('📡 [SignalR WebSockets] Evento ReceiveNewAttendance recibido:', data);
 
-      // Si el evento viene con datos del nuevo registro, mapearlo e insertarlo inmediatamente en el feed
-      if (data && workers.length > 0) {
+      if (data && workersRef.current.length > 0) {
         try {
-          const newRecord = mapAsistenciaToAttendanceRecord(data, workers);
+          const newRecord = mapAsistenciaToAttendanceRecord(data, workersRef.current);
           setAttendanceLogs((prev) => {
             if (prev.some((p) => p.id === newRecord.id)) return prev;
             return [newRecord, ...prev];
@@ -344,12 +351,18 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     const startConnection = async () => {
       try {
         await connection.start();
-        if (isMounted) {
+        if (!isCancelled) {
           console.log('🟢 [SignalR WebSockets] Conectado exitosamente a http://localhost:5216/hubs/attendance');
+        } else {
+          connection.stop().catch(() => {});
         }
-      } catch (err) {
-        if (isMounted) {
-          console.warn('🟡 [SignalR WebSockets] Esperando disponibilidad del hub en http://localhost:5216/hubs/attendance...', err);
+      } catch (err: any) {
+        if (!isCancelled) {
+          const msg = err?.message || String(err);
+          // Ignorar de forma silenciosa si la detención fue durante negociación por ciclo de render
+          if (!msg.includes('stopped during negotiation')) {
+            console.warn('🟡 [SignalR WebSockets] Hub aún no disponible (reintentando en segundo plano)...');
+          }
         }
       }
     };
@@ -357,10 +370,11 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     startConnection();
 
     return () => {
-      isMounted = false;
-      connection.stop().catch((err) => console.error('Error al desconectar SignalR:', err));
+      isCancelled = true;
+      // Detener limpiamente sin emitir error durante la negociación
+      connection.stop().catch(() => {});
     };
-  }, [fetchAttendances, workers]);
+  }, [fetchAttendances]);
 
   const [requests, setRequests] = useState<RequestItem[]>(INITIAL_REQUESTS);
   // Estado de Papeletas desde SQL Server (http://localhost:5216/api/Papeletas)

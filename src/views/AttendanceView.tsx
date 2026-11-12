@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useApp } from '../context/AppContext';
 import { Badge } from '../components/common/Badge';
 import type { AttendanceRecord, WorkerType, AttendancePunctuality } from '../types';
@@ -25,13 +25,24 @@ export const AttendanceView: React.FC = () => {
   const [punctualityFilter, setPunctualityFilter] = useState<'ALL' | AttendancePunctuality>('ALL');
   const [downloadSuccess, setDownloadSuccess] = useState<boolean>(false);
 
+  // Asegurar que al entrar a la bitácora general se consulten todas las marcaciones sin filtro de trabajador
+  useEffect(() => {
+    reloadAttendances();
+  }, [reloadAttendances]);
+
   const filteredLogs = attendanceLogs.filter((log: AttendanceRecord) => {
-    const q = searchTerm.toLowerCase();
+    if (!log) return false;
+    const q = (searchTerm || '').toLowerCase();
+    const workerName = (log.workerName || (log as any).nombre || '').toLowerCase();
+    const rfidTag = (log.rfidTag || (log as any).tagRFID || '').toLowerCase();
+    const contractorCompany = (log.contractorCompany || '').toLowerCase();
+    const terminalLocation = (log.terminalLocation || '').toLowerCase();
+
     const matchesSearch =
-      log.workerName.toLowerCase().includes(q) ||
-      log.rfidTag.toLowerCase().includes(q) ||
-      (log.contractorCompany && log.contractorCompany.toLowerCase().includes(q)) ||
-      log.terminalLocation.toLowerCase().includes(q);
+      workerName.includes(q) ||
+      rfidTag.includes(q) ||
+      contractorCompany.includes(q) ||
+      terminalLocation.includes(q);
 
     const matchesType =
       typeFilter === 'ALL' ||
@@ -308,36 +319,38 @@ export const AttendanceView: React.FC = () => {
                     {/* Timestamp */}
                     <td className="py-3 px-4">
                       <span className="font-mono font-bold text-slate-900 block">
-                        {log.timeFormatted}
+                        {log.timeFormatted || log.timestamp?.split('T')[1]?.slice(0, 8) || (log as any).horaIngreso?.split('.')[0] || '--:--:--'}
                       </span>
-                      <span className="text-[10px] text-slate-400">{log.dateFormatted}</span>
+                      <span className="text-[10px] text-slate-400">
+                        {log.dateFormatted || log.timestamp?.split('T')[0] || (log as any).fecha?.split('T')[0] || '--'}
+                      </span>
                     </td>
 
                     {/* Worker & Avatar */}
                     <td className="py-3 px-4">
                       <div className="flex items-center gap-2.5">
                         <img
-                          src={log.avatarUrl}
-                          alt={log.workerName}
+                          src={log.avatarUrl || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=150&auto=format&fit=crop&q=80'}
+                          alt={log.workerName || 'Colaborador'}
                           className="w-8 h-8 rounded-lg object-cover border border-slate-200 shrink-0"
                         />
                         <div className="min-w-0">
                           <span className="font-bold text-slate-900 block truncate max-w-[170px]">
-                            {log.workerName}
+                            {log.workerName || (log as any).nombre || 'Colaborador'}
                           </span>
-                          <span className="text-[10px] text-slate-500">{log.workerPosition}</span>
+                          <span className="text-[10px] text-slate-500">{log.workerPosition || (log as any).cargo || 'Operario'}</span>
                         </div>
                       </div>
                     </td>
 
                     {/* Worker Type */}
                     <td className="py-3 px-4">
-                      <Badge value={log.workerType} size="sm" />
+                      <Badge value={log.workerType || 'TRABAJADOR_REGULAR'} size="sm" />
                     </td>
 
                     {/* Scan Type */}
                     <td className="py-3 px-4">
-                      <Badge value={log.scanType} size="sm" />
+                      <Badge value={log.scanType || 'ENTRADA'} size="sm" />
                     </td>
 
                     {/* Puntualidad */}
@@ -352,14 +365,16 @@ export const AttendanceView: React.FC = () => {
                     {/* Tag */}
                     <td className="py-3 px-4">
                       <span className="font-mono text-[11px] text-slate-800 bg-slate-100 px-2 py-0.5 rounded border border-slate-300">
-                        {log.rfidTag}
+                        {log.rfidTag || (log as any).tagRFID || '--'}
                       </span>
                     </td>
 
                     {/* Terminal */}
                     <td className="py-3 px-4">
-                      <span className="text-slate-800 font-bold block">{log.terminalId}</span>
-                      <span className="text-[10px] text-slate-400">{log.terminalLocation.split('(')[1]?.replace(')', '') || log.terminalLocation}</span>
+                      <span className="text-slate-800 font-bold block">{log.terminalId || 'TRM-01'}</span>
+                      <span className="text-[10px] text-slate-400">
+                        {(log.terminalLocation || '').split('(')[1]?.replace(')', '') || log.terminalLocation || 'Torniquete 1'}
+                      </span>
                     </td>
 
                     {/* Notas */}
@@ -370,15 +385,15 @@ export const AttendanceView: React.FC = () => {
                             <ShieldCheck className="w-3 h-3 text-emerald-600" />
                             Aprobado: {log.authorizedBy === 'JEFE_PLANTA' ? 'Jefe de Planta' : 'Gerencia'}
                           </span>
-                          <p className="text-[10px] text-slate-500 truncate">Doc: {log.toleranceAuthorizationDoc}</p>
+                          <p className="text-[10px] text-slate-500 truncate">Doc: {log.toleranceAuthorizationDoc || 'Autorizado'}</p>
                         </div>
                       ) : log.punctuality === 'TARDANZA_DESCUENTO' ? (
                         <span className="text-[11px] font-mono text-slate-700 font-semibold">
-                          +{log.delayMinutes} min computable
+                          +{log.delayMinutes || 0} min computable
                         </span>
                       ) : (
                         <span className="text-[11px] text-slate-500 truncate block">
-                          {log.notes || '--'}
+                          {log.notes || (log as any).observaciones || '--'}
                         </span>
                       )}
                     </td>
